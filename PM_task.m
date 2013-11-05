@@ -4,6 +4,7 @@ classdef PM_task
 	properties(Constant = true)
 		numSimulations = 20000;
 		numTrials = 1000;
+		maxPresentationsPerTrial = 15;
 		numUniqueItems = 100;
 		numSamplesPerPresentation = 10;
 		SETTINGS_MAT_FILE = 'EM_trial_simulations.mat';
@@ -11,17 +12,21 @@ classdef PM_task
 
 	methods(Static = true)
 		% this function 
-		function [] = generateSimulationTargetsAndLures(numSimulations, numTrials,numUniqueItems,numSamplesPerPresentation)
-			targets = randi(numUniqueItems,1,numTrials);
-			lures = randi(numUniqueItems,1,numTrials);
-			target_lure_matches = find(targets == lures);
-			num_rerands = 0;
-			while numel(target_lure_matches) ~= 0
-				num_rerands = num_rerands + 1;
-				lures(target_lure_matches) = randi(numUniqueItems,1,numel(target_lure_matches));
-				target_lure_matches = find(targets == lures);
+		function [] = generateSimulationTargetsAndLures(numTrials,numUniqueItems,numSimulations)
+			targets = zeros(1,numTrials);
+			item_presentations_per_trial = cell(1,numTrials);
+
+			% general gist is to select a random number of presentations for a trial, then randomly select that many items for the trial
+			% and set the target to be the last item for for that trial
+			for trial = 1 : numTrials
+				% select how many images will be presented on this trial
+				num_presentations = randi(PM_task.maxPresentationsPerTrial);
+				% generate sequence of images
+				item_presentations_per_trial{trial} = randsample(numUniqueItems,num_presentations);
+				% grab last presented item
+				targets(trial) = item_presentations_per_trial{trial}(end);
 			end
-			clear num_rerands; clear target_lure_matches;
+
 			save(PM_task.SETTINGS_MAT_FILE,'-v7.3');
 		end
 
