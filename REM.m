@@ -103,15 +103,15 @@ classdef REM
 
 		% just a helper fn that allows you to specify an item index instead of the item itself
 		% NOTE: this appends the current context
-		function [odds_ratio] = getOddsRatioForItemIdx(this,item_idx)
+		function [odds_ratio, p_old_given_data, p_new_given_data] = getOddsRatioForItemIdx(this,item_idx)
 			% our full vector to encode is the concatenated item + currentContext
 			item = [this.items(:,item_idx); this.currentContext];
 
-			odds_ratio = this.getOddsRatioForItem(item);
+			[odds_ratio, p_old_given_data, p_new_given_data] = this.getOddsRatioForItem(item);
 		end
 
 		% the odds ratio for an item is defined as phi in the Shiffrin paper
-		function [odds_ratio] = getOddsRatioForItem(this, item)
+		function [odds_ratio, p_old_given_data, p_new_given_data] = getOddsRatioForItem(this, item)
 		% NOTE: it is assumed that item parameter has the appropriate context features
 		% appended to it
 			num_traces = size(this.EMStore,2);
@@ -119,18 +119,22 @@ classdef REM
 			% these store the per  trace likelihood ratios;
 			% these are lambda in the Shiffrin paper
 			item_trace_likelihood_ratios = zeros(1,num_traces);
+			p_old_given_data = zeros(1,num_traces);
+			p_new_given_data = zeros(1,num_traces);
 
 			% iterate through each memory trace in EMStore
 			for trace_idx = 1 : num_traces
 				EM_trace = this.EMStore(:,trace_idx);
 
-				item_trace_likelihood_ratios(trace_idx) = this.calculateItemTraceOddsRatio(EM_trace,item);
+				[item_trace_likelihood_ratios(trace_idx), p_old_given_data(trace_idx), p_new_given_data(trace_idx)] = this.calculateItemTraceOddsRatio(EM_trace,item);
             end
             
             odds_ratio = mean(item_trace_likelihood_ratios);
+			p_old_given_data = mean(p_old_given_data);
+			p_new_given_data = mean(p_new_given_data);
 		end
 
-		function [item_trace_likelihood] = calculateItemTraceOddsRatio(this, EM_trace, item)
+		function [item_trace_likelihood, p_old_given_data, p_new_given_data] = calculateItemTraceOddsRatio(this, EM_trace, item)
 			% it's easier to do this if we split it into item features and context feaures
 			EM_trace_context_features = EM_trace(this.numItemFeatures+1:end);
 			EM_trace_item_features = EM_trace(1:this.numItemFeatures);
@@ -149,8 +153,13 @@ classdef REM
 			EM_trace_context_features = EM_trace_context_features(nonzero_item_idcs);
 
 			% okay, so now we have 2 pairs of vectors we need to match to each other. one pair corresponds to item features, the other to context features
-			item_trace_likelihood = REM.itemTraceOddsRatioHelper(EM_trace_item_features,item_item_features,this.probCorrectFeatureEncoded,this.geometricDistP);
-			item_trace_likelihood = item_trace_likelihood * REM.itemTraceOddsRatioHelper(EM_trace_context_features,item_context_features,this.probCorrectFeatureEncoded,this.contextGeometricDistP);
+			[item_trace_likelihood, p_old_given_data, p_new_given_data] = REM.itemTraceOddsRatioHelper(EM_trace_item_features,item_item_features,this.probCorrectFeatureEncoded,this.geometricDistP);
+			[item_trace_likelihood_context, p_old_given_data_context, p_new_given_data_context] = REM.itemTraceOddsRatioHelper(EM_trace_context_features,item_context_features,this.probCorrectFeatureEncoded,this.contextGeometricDistP);
+
+			% here we actually combine the results
+			item_trace_likelihood = item_trace_likelihood * item_trace_likelihood_context;
+			p_old_given_data = p_old_given_data * p_old_given_data_context;
+			p_new_given_data = p_new_given_data * p_new_given_data_context;
 
 		end
 		
@@ -225,19 +234,23 @@ classdef REM
 	end
 
 	methods(Static = true)
-		function [odds_ratio] = itemTraceOddsRatioHelper(EM_trace, item, c, geometric_dist_p)
+		function [odds_ratio, p_old_given_data, p_new_given_data] = itemTraceOddsRatioHelper(EM_trace, item, c, geometric_dist_p)
 			match_idcs = find(EM_trace == item);
 			num_matches = numel(match_idcs);
 			odds_ratio = 1;
+			p_old_given_data = 1.0;
+			p_new_given_data = 1.0;
 			for match_idx = 1 : num_matches
 				feature_value = EM_trace(match_idcs(match_idx));
 
 				% in the Shiffrin paper, this is the product on the right half of the right hand side of equation A7 
-				odds_ratio = odds_ratio * ((c + (1-c)*geometric_dist_p*(1-geometric_dist_p)^(feature_value-1))/ (geometric_dist_p*(1-geometric_dist_p)^(feature_value-1)) );
+				p_old_given_data = p_old_given_data * (c + (1-c)*geometric_dist_p*(1-geometric_dist_p)^(feature_value-1));
+				p_new_given_data = p_new_given_data * (geometric_dist_p*(1-geometric_dist_p)^(feature_value-1)) ;
 			end
 			num_mismatches = numel(EM_trace) - num_matches;
 			% in the Shiffrin paper, this comes out to the left half of the right side of equation A7 in the appendix
-			odds_ratio = odds_ratio * (1 - c) ^ num_mismatches;
+			p_old_given_data = p_old_given_data * (1 - c) ^ num_mismatches;
+			odds_ratio = p_old_given_data / p_new_given_data;
 
         end
 
