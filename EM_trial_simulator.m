@@ -39,7 +39,7 @@ classdef EM_trial_simulator
 
 		function this = ILL_SIM_YOU_LATER(this)
 			% initialize our simulator and the list items
-			this.EMsim = REM(this.numTrials,this.tid);
+			this.EMsim = REM(this.numUniqueItems,this.tid);
 
 			for trial = 1 : this.numTrials
 				this.currentTrial = trial;
@@ -49,6 +49,7 @@ classdef EM_trial_simulator
 				this.EMsim = this.EMsim.setupNewTrial(target_idx);
 				num_presentations = numel(this.itemPresentationsPerTrial{trial});
 
+				% here we present the images for this trial and store all the info
 				for presentation_idx = 1 : num_presentations
 					presented_item_idx = this.itemPresentationsPerTrial{trial}(presentation_idx);
 					[this.presentationStrengthsPerTrial{trial}(presentation_idx), this.presentationProbOld{trial}(presentation_idx), ...
@@ -67,6 +68,12 @@ classdef EM_trial_simulator
 			end
 			save_file = ['EM_sim_results_' this.tid '.mat'];
 			save(save_file,'this','-v7.3');
+			% we also save a barebones version
+			save_file = ['EM_sim_results_' this.tid 'barebones.mat'];
+			p_old = this.presentationProbOld;
+			p_new = this.presentationProbNew;
+			p_target_indicator = this.presentationTargetIndicator;
+			save(save_file,'p_old','p_new','p_target_indicator','-v7.3');
 		end
 
 		function this = load_settings_if_present(this)
@@ -75,6 +82,7 @@ classdef EM_trial_simulator
 				this.tid = tid;
 				load(PM_task.SETTINGS_MAT_FILE);
 				this.numTrials = numel(targets);
+				this.numUniqueItems = numUniqueItems;
 				this.targetsPerTrial = targets;
 				this.itemPresentationsPerTrial = item_presentations_per_trial;
 				this.presentationStrengthsPerTrial = cell(1,this.numTrials);
