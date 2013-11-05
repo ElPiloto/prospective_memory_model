@@ -5,8 +5,14 @@ classdef EM_trial_simulator
 		% STATE variables
 		%%%%%%%%%%%%%%%%%%%%
 		EMsim;
-		targetStrengths = [];
-		lureStrengths = [];
+		% this will hold the odds ratio for each item presented
+		presentationStrengthsPerTrial={};
+		% this will specify whether the presented item is a target or not
+		presentationTargetIndicator={};
+		% this will specify the prob old for the item presented
+		presentationProbOld={};
+		% this will specify the prob new for the item presented
+		presentationProbNew={};
 		tid = '1';
 		currentTrial = 0;
 		
@@ -17,7 +23,7 @@ classdef EM_trial_simulator
 		numUniqueItems = 100;
 		numSamplesPerPresentationTarget = 10;
 		targetsPerTrial = [];
-		luresPerTrial = [];
+		itemPresentationsPerTrial = [];
 	end
 
 	% properties(Constant = true);
@@ -29,8 +35,6 @@ classdef EM_trial_simulator
 	methods
 		function this = EM_trial_simulator()
 			this = load_settings_if_present(this);
-			this.targetStrengths = zeros(this.numTrials,this.numSamplesPerPresentationTarget);
-			this.lureStrengths = zeros(this.numTrials,this.numSamplesPerPresentationTarget);
 		end
 
 		function this = ILL_SIM_YOU_LATER(this)
@@ -39,33 +43,32 @@ classdef EM_trial_simulator
 
 			for trial = 1 : this.numTrials
 				this.currentTrial = trial;
+
+				% setup trial by specifying target_idx
 				target_idx = this.targetsPerTrial(trial);
-				lure_idx = this.luresPerTrial(trial);
-
 				this.EMsim = this.EMsim.setupNewTrial(target_idx);
+				num_presentations = numel(this.itemPresentationsPerTrial{trial});
 
-				for sample_idx = 1 : this.numSamplesPerPresentationTarget
-					% actually grab the memory strengths
-					this.targetStrengths(trial, sample_idx) = this.EMsim.getOddsRatioForItemIdx(target_idx);
-					this.lureStrengths(trial, sample_idx) = this.EMsim.getOddsRatioForItemIdx(lure_idx);
+				for presentation_idx = 1 : num_presentations
+					presented_item_idx = this.itemPresentationsPerTrial{trial}(presentation_idx);
+					[this.presentationStrengthsPerTrial{trial}(presentation_idx), this.presentationProbOld{trial}(presentation_idx), ...
+						this.presentationProbNew{trial}(presentation_idx)] = this.EMsim.getOddsRatioForItemIdx(presented_item_idx);
 
-					% this will force us to re-encode our target, giving us a new sample for the next iteration
-					% NOTE: REMEMBER THAT THIS CODE WORKS AS INTENDED ONLY IF WE REPLACE EXISTING MEMORY TRACES FOR
-					% THE SAME ITEM WHEN WE ENCODE
-					this.EMsim = this.EMsim.encode(target_idx);
+					% this should always be the last one, but let's just go ahead and make sure we're doing what we think we're doing with this check
+					if presented_item_idx == target_idx
+						this.presentationTargetIndicator{trial}(presentation_idx) = 1;
+					end
 				end
-				if mod(trial,10) == 0
+
+				if mod(trial,50) == 0
 					disp(['Current trial: ' num2str(trial)]);
 				end
 
 			end
 			save_file = ['EM_sim_results_' this.tid '.mat'];
-			targetStrengths = this.targetStrengths;
-			lureStrengths = this.lureStrengths;
-			save(save_file,'targetStrengths','lureStrengths','-v7.3');
+			save(save_file,'this','-v7.3');
 		end
 
-		% TO-DO: FINISH THIS TO ACTUALLY LOAD SHIT UP!!!!!!
 		function this = load_settings_if_present(this)
 			tid = getenv('SGE_TASK_ID');
 			if ~isempty(tid) && exist(PM_task.SETTINGS_MAT_FILE,'file')
@@ -73,7 +76,12 @@ classdef EM_trial_simulator
 				load(PM_task.SETTINGS_MAT_FILE);
 				this.numTrials = numel(targets);
 				this.targetsPerTrial = targets;
-				this.luresPerTrial = lures;
+				this.itemPresentationsPerTrial = item_presentations_per_trial;
+				this.presentationStrengthsPerTrial = cell(1,this.numTrials);
+				this.presentationTargetIndicator = cell(1,this.numTrials);
+				this.presentationProbOld = cell(1,this.numTrials);
+				this.presentationProbNew = cell(1,this.numTrials);
+
 				% now we initialize our values based on each 
 				% THERE ARE TWO LEVELS OF INITIALIZATION:
 				% general setttings for REM.m
