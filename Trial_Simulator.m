@@ -15,6 +15,14 @@ classdef Trial_Simulator
 		EMpresentationProbNew={};
 		tid = '1';
 		currentTrial = 0;
+		% this will contain the EM strengths for past lures
+		EMpastLureStrengthsPerTrial={};
+		% this will contain the EM strengths for past targets
+		EMpastTargetsStrengthsPerTrial={};
+		% here we'll hold the context vectors across all trials
+		contextVectors = {};
+		% 
+		
 		
 		%%%%%%%%%%%%%%%%%%%%
 		% SETTINGS variables

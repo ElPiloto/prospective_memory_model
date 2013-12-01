@@ -50,6 +50,17 @@ classdef REM
 		uniformContextThroughoutTrial = true;
 		% context geometric
 		contextGeometricDistP = 0.9;
+		% this tells us whether we create a new context vector from scratch on each trial
+		% or if we take the current context vector and randomly resample some features from it as
+		% a way of gradually shifting
+		shiftContextAcrossTrials = true;
+		% probability with which we resample a feature, currently chosen so that with 20 context features, we can expect to
+		% resample around two features each time
+		probContextFeatureResample = 0.1;
+
+		% Other settings
+		% this tells us whether we replace or simply append memory traces
+		replaceMemoryTraceForItems = false;
 	end
 	methods
 		% constructor currently has nothing to do
@@ -63,7 +74,7 @@ classdef REM
 			this.currentTrial = this.currentTrial + 1;
 
 			% select context for this trial
-			this = this.makeNewContext();
+			this = this.makeAndSetNewContext();
 
 			% set which item is our target for this trial;
 			% select randomly if target_item_idx not specified
@@ -82,7 +93,7 @@ classdef REM
 			this.items = geornd(this.geometricDistP ,this.numItemFeatures, this.numUniqueItems);
 		end
 
-		% will select a target idx and set the trial
+		% will select a target idx and set it as a target for this trial
 		function [this, target_idx] = setRandomTargetItem(this)
 			target_idx = randi(this.numUniqueItems);
 			this.currentTarget = target_idx;
@@ -93,12 +104,26 @@ classdef REM
 			this.currentTarget = item_idx;
 		end
 		
-		function [this, context_vector] = makeNewContext(this)
-			this.currentContext = geornd( this.contextGeometricDistP, this.numContextFeatures,1);
+		% this is used for creating a new context for a trial. new can mean:
+		% 1) brand new context generated according to geometric distribution
+		% 2) shifting the context from the last trial to produce a new context
+		function [this] = makeAndSetNewContext(this)
+			if this.shiftContextAcrossTrials && this.currentTrial ~= 1
+				% we want to shift our current context instead of generate a new one from scratch
+				this.currentContext = this.shiftCurrentContext();
+			else
+				this.currentContext = geornd( this.contextGeometricDistP, this.numContextFeatures,1);
+			end
 		end
 
-		function [this, context_vector]	= shiftCurrentContext()
-
+		% returns a shifted context vector - the shift occurs as a probability of resampling features in the current context vector
+		function [shifted_context_vector] = shiftCurrentContext(this)
+			shifted_context_vector = this.currentContext;
+			for feature_idx = 1 : this.numContextFeatures
+				if rand < this.probContextFeatureResample
+					shifted_context_vector(feature_idx) = geornd(this.contextGeometricDistP, 1,1);
+				end
+			end
 		end
 
 		% just a helper fn that allows you to specify an item index instead of the item itself
@@ -205,31 +230,27 @@ classdef REM
 
 		end
 
-		% currently, REPLACES existing memory traces generated from the 
-		% putting this into it's own function allows us to make different decisions about how to integrate repeats of items
 		function this = addEncodedItemToEMStore(this,encoded_item_idx, encoded_trace)
 			% encoded_item_idx corresponds to which item number the encoded trace belongs to i.e. we selected item 5 as our target
 			% underwent the noisy encoding process to generate encoded_trace, and therefore encoded_item_idx is equal to 5
 
-			% currently this is the REPLACE logic
-			EM_store_location_for_item = find(this.EMStoreItemIdcs == encoded_item_idx);
-			if isempty(EM_store_location_for_item)
-				% memory trace's item has not been stored, let's just append it to the end
+			if this.replaceMemoryTraceForItems
+				EM_store_location_for_item = find(this.EMStoreItemIdcs == encoded_item_idx);
+				if isempty(EM_store_location_for_item)
+					% memory trace's item has not been stored, let's just append it to the end
+					this.EMStore = [this.EMStore encoded_trace];
+					this.EMStoreItemIdcs = [this.EMStoreItemIdcs encoded_item_idx];
+				else
+					% memory trace's item has been stored, let's replace it with the memory trace for this item from this trial
+					this.EMStore(:,EM_store_location_for_item) = encoded_trace;
+				end
+			else % this is the logic where we don't ever REPLACE memory traces
+				% let's just append it to the end
 				this.EMStore = [this.EMStore encoded_trace];
 				this.EMStoreItemIdcs = [this.EMStoreItemIdcs encoded_item_idx];
-			else
-				% memory trace's item has been stored, let's replace it with the memory trace for this item from this trial
-				this.EMStore(:,EM_store_location_for_item) = encoded_trace;
 			end
 		end
 
-		function generateContext(this)
-		end
-
-		% tiny utility functions
-		function non_target_idx = getNontargetItem
-
-		end
 
 	end
 
