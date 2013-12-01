@@ -1,4 +1,4 @@
-classdef EM_trial_simulator
+classdef Trial_Simulator
 	properties
 		
 		%%%%%%%%%%%%%%%%%%%%
@@ -6,13 +6,13 @@ classdef EM_trial_simulator
 		%%%%%%%%%%%%%%%%%%%%
 		EMsim;
 		% this will hold the odds ratio for each item presented
-		presentationStrengthsPerTrial={};
+		EMpresentationStrengthsPerTrial={};
 		% this will specify whether the presented item is a target or not
-		presentationTargetIndicator={};
+		EMpresentationTargetIndicator={};
 		% this will specify the prob old for the item presented
-		presentationProbOld={};
+		EMpresentationProbOld={};
 		% this will specify the prob new for the item presented
-		presentationProbNew={};
+		EMpresentationProbNew={};
 		tid = '1';
 		currentTrial = 0;
 		
@@ -33,7 +33,7 @@ classdef EM_trial_simulator
 	% end
 
 	methods
-		function this = EM_trial_simulator()
+		function this = Trial_Simulator()
 			this = load_settings_if_present(this);
 		end
 
@@ -52,12 +52,12 @@ classdef EM_trial_simulator
 				% here we present the images for this trial and store all the info
 				for presentation_idx = 1 : num_presentations
 					presented_item_idx = this.itemPresentationsPerTrial{trial}(presentation_idx);
-					[this.presentationStrengthsPerTrial{trial}(presentation_idx), this.presentationProbOld{trial}(presentation_idx), ...
-						this.presentationProbNew{trial}(presentation_idx)] = this.EMsim.getOddsRatioForItemIdx(presented_item_idx);
+					[this.EMpresentationStrengthsPerTrial{trial}(presentation_idx), this.EMpresentationProbOld{trial}(presentation_idx), ...
+						this.EMpresentationProbNew{trial}(presentation_idx)] = this.EMsim.getOddsRatioForItemIdx(presented_item_idx);
 
 					% this should always be the last one, but let's just go ahead and make sure we're doing what we think we're doing with this check
 					if presented_item_idx == target_idx
-						this.presentationTargetIndicator{trial}(presentation_idx) = 1;
+						this.EMpresentationTargetIndicator{trial}(presentation_idx) = 1;
 					end
 				end
 
@@ -70,9 +70,9 @@ classdef EM_trial_simulator
 			save(save_file,'this','-v7.3');
 			% we also save a barebones version
 			save_file = ['EM_sim_results_' this.tid 'barebones.mat'];
-			p_old = this.presentationProbOld;
-			p_new = this.presentationProbNew;
-			p_target_indicator = this.presentationTargetIndicator;
+			p_old = this.EMpresentationProbOld;
+			p_new = this.EMpresentationProbNew;
+			p_target_indicator = this.EMpresentationTargetIndicator;
 			save(save_file,'p_old','p_new','p_target_indicator','-v7.3');
 		end
 
@@ -85,10 +85,10 @@ classdef EM_trial_simulator
 				this.numUniqueItems = numUniqueItems;
 				this.targetsPerTrial = targets;
 				this.itemPresentationsPerTrial = item_presentations_per_trial;
-				this.presentationStrengthsPerTrial = cell(1,this.numTrials);
-				this.presentationTargetIndicator = cell(1,this.numTrials);
-				this.presentationProbOld = cell(1,this.numTrials);
-				this.presentationProbNew = cell(1,this.numTrials);
+				this.EMpresentationStrengthsPerTrial = cell(1,this.numTrials);
+				this.EMpresentationTargetIndicator = cell(1,this.numTrials);
+				this.EMpresentationProbOld = cell(1,this.numTrials);
+				this.EMpresentationProbNew = cell(1,this.numTrials);
 
 				% now we initialize our values based on each 
 				% THERE ARE TWO LEVELS OF INITIALIZATION:
