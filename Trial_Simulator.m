@@ -4,11 +4,11 @@ classdef Trial_Simulator
 		%%%%%%%%%%%%%%%%%%%%
 		% STATE variables
 		%%%%%%%%%%%%%%%%%%%%
-		EMsim;
+		REMsim;
 		% this will hold the odds ratio for each item presented
 		EMpresentationStrengthsPerTrial={};
 		% this will specify whether the presented item is a target or not
-		EMpresentationTargetIndicator={};
+		presentationTargetIndicator={};
 		% this will specify the prob old for the item presented
 		EMpresentationProbOld={};
 		% this will specify the prob new for the item presented
@@ -21,9 +21,17 @@ classdef Trial_Simulator
 		EMpastTargetsStrengthsPerTrial={};
 		% here we'll hold the context vectors across all trials
 		contextVectors = {};
-		% 
-		
-		
+		% this will hold the odds ratio for each item presented
+		WMpresentationStrengthsPerTrial={};
+		% this will contain the EM strengths for past lures
+		WMpastLureStrengthsPerTrial={};
+		% this will contain the EM strengths for past targets
+		WMpastTargetsStrengthsPerTrial={};
+		WMrehearsalAttemptsPerTrial={};
+		WMrehearsalFailuresPerTrial={};
+		% this keeps track of how many features were decayed
+		WMdecayedFeatures={};
+
 		%%%%%%%%%%%%%%%%%%%%
 		% SETTINGS variables
 		%%%%%%%%%%%%%%%%%%%%
@@ -47,25 +55,38 @@ classdef Trial_Simulator
 
 		function this = ILL_SIM_YOU_LATER(this)
 			% initialize our simulator and the list items
-			this.EMsim = REM(this.numUniqueItems,this.tid);
+			this.REMsim = REMplusWM(this.numUniqueItems,this.tid);
 
 			for trial = 1 : this.numTrials
 				this.currentTrial = trial;
 
 				% setup trial by specifying target_idx
 				target_idx = this.targetsPerTrial(trial);
-				this.EMsim = this.EMsim.setupNewTrial(target_idx);
+				this.REMsim = this.REMsim.setupNewTrial(target_idx);
 				num_presentations = numel(this.itemPresentationsPerTrial{trial});
 
 				% here we present the images for this trial and store all the info
 				for presentation_idx = 1 : num_presentations
 					presented_item_idx = this.itemPresentationsPerTrial{trial}(presentation_idx);
-					[this.EMpresentationStrengthsPerTrial{trial}(presentation_idx), this.EMpresentationProbOld{trial}(presentation_idx), ...
-						this.EMpresentationProbNew{trial}(presentation_idx)] = this.EMsim.getOddsRatioForItemIdx(presented_item_idx);
 
-					% this should always be the last one, but let's just go ahead and make sure we're doing what we think we're doing with this check
+					% update trial time for WM
+					this.REMsim = this.REMsim.updateTrialTime();
+					[this.REMsim this.WMdecayedFeatures{trial}(presentation_idx)] = this.REMsim.decayWMtrace();
+
+					% perform rehearsal if needed
+					[this.REMsim this.WMrehearsalAttemptsPerTrial{trial}(presentation_idx) ...
+				   		this.WMrehearsalFailuresPerTrial{trial}(presentation_idx)] = this.REMsim.updateWMifNeeded();
+
+					% get EM signal
+					[this.EMpresentationStrengthsPerTrial{trial}(presentation_idx), this.EMpresentationProbOld{trial}(presentation_idx), ...
+						this.EMpresentationProbNew{trial}(presentation_idx)] = this.REMsim.getOddsRatioForItemIdx(presented_item_idx);
+
+					% get WM signal
+					[this.WMpresentationStrengthsPerTrial{trial}(presentation_idx)] = this.REMsim.probeWM(presented_item_idx);
+
+					% this should always be the last item presented that gets recorded as the target, but let's just go ahead and make sure we're doing what we think we're doing with this check
 					if presented_item_idx == target_idx
-						this.EMpresentationTargetIndicator{trial}(presentation_idx) = 1;
+						this.presentationTargetIndicator{trial}(presentation_idx) = 1;
 					end
 				end
 
@@ -80,7 +101,7 @@ classdef Trial_Simulator
 			save_file = ['EM_sim_results_' this.tid 'barebones.mat'];
 			p_old = this.EMpresentationProbOld;
 			p_new = this.EMpresentationProbNew;
-			p_target_indicator = this.EMpresentationTargetIndicator;
+			p_target_indicator = this.presentationTargetIndicator;
 			save(save_file,'p_old','p_new','p_target_indicator','-v7.3');
 		end
 
@@ -94,7 +115,7 @@ classdef Trial_Simulator
 				this.targetsPerTrial = targets;
 				this.itemPresentationsPerTrial = item_presentations_per_trial;
 				this.EMpresentationStrengthsPerTrial = cell(1,this.numTrials);
-				this.EMpresentationTargetIndicator = cell(1,this.numTrials);
+				this.presentationTargetIndicator = cell(1,this.numTrials);
 				this.EMpresentationProbOld = cell(1,this.numTrials);
 				this.EMpresentationProbNew = cell(1,this.numTrials);
 

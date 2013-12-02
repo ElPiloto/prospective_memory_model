@@ -1,6 +1,6 @@
 % this is a modified implementation of REM.1 from the Shiffrin and Steyvers (1997) paper
-% we make many references to it
-classdef REM
+% we make many references to it - additionally, we add in a WM module
+classdef REMplusWM
 	properties
 		
 		%%%%%%%%%%%%%%%%%%%%
@@ -15,11 +15,19 @@ classdef REM
 		% this tells us for each value in EMStore, which item number it was generated from
 		EMStoreItemIdcs = [];
 
+		% WM store - currently only contains a single memory trace at a time
+		WMStore = [];
+		% this tells us for the value in WMStore, which item number it was generated from
+		WMStoreItemIdcs = [];
+		lastWMRehearsalTime = [];
+
 		currentTrial = 0;
 		currentContext = [];
 		currentTarget = [];
+		currentTimeInTrial = 0;
 
 		currentRNGSeed = 102387;
+
 		%%%%%%%%%%%%%%%%%%%%
 		% SETTINGS variables
 		%%%%%%%%%%%%%%%%%%%%
@@ -49,7 +57,7 @@ classdef REM
 		% this indicates whether or not we should gradually 
 		uniformContextThroughoutTrial = true;
 		% context geometric
-		contextGeometricDistP = 0.9;
+		contextGeometricDistP = 0.5;
 		% this tells us whether we create a new context vector from scratch on each trial
 		% or if we take the current context vector and randomly resample some features from it as
 		% a way of gradually shifting
@@ -59,12 +67,24 @@ classdef REM
 		probContextFeatureResample = 0.1;
 
 		% Other settings
-		% this tells us whether we replace or simply append memory traces
+		% this tells us whether we replace or simply append memory traces for EM
 		replaceMemoryTraceForItems = false;
+
+		% Settings used for WM
+		% this tells us the time between presentations in a single trial - the units are arbitrary and really only matter
+		% with respect to its relationship to the WM rehearsal frequency and decay values
+		timeBetweenPresentations = 5;
+		% WM rehearsal frequency
+		rehearsalFreqWM = 20;
+		% feature decay probability: this specifies the probability that a feature gets resampled at each time unit
+		probFeatureDecayWMTrace = 0.1;
+
+		
+
 	end
 	methods
 		% constructor currently has nothing to do
-		function this = REM(numUniqueItems, currentRNGSeed)
+		function this = REMplusWM(numUniqueItems, currentRNGSeed)
             this.numUniqueItems = numUniqueItems;
             this.currentRNGSeed = currentRNGSeed;
 			this = createListItems(this);
@@ -72,6 +92,8 @@ classdef REM
 
 		function this = setupNewTrial(this,target_item_idx)
 			this.currentTrial = this.currentTrial + 1;
+
+			this.currentTimeInTrial = 0;
 
 			% select context for this trial
 			this = this.makeAndSetNewContext();
@@ -84,8 +106,11 @@ classdef REM
 				[this] = this.setTargetItem(target_item_idx);
 			end
 
-			% encode the current item with the current context
-			this = encode(this,target_item_idx);
+			% encode the current item with the current context into EM
+			this = encodeEM(this,target_item_idx);
+
+			% encode the current item with the current context into WM
+			this = encodeWM(this,target_item_idx);
 
 		end
 
@@ -136,7 +161,7 @@ classdef REM
 		end
 
 		% the odds ratio for an item is defined as phi in the Shiffrin paper
-		function [odds_ratio, p_old_given_data, p_new_given_data] = getOddsRatioForItem(this, item)
+		function [odds_ratio, p_old_given_data, p_new_given_data, item_trace_likelihood_ratios] = getOddsRatioForItem(this, item)
 		% NOTE: it is assumed that item parameter has the appropriate context features
 		% appended to it
 			num_traces = size(this.EMStore,2);
@@ -188,7 +213,77 @@ classdef REM
 
 		end
 		
-		function this = encode(this, item_idx)
+
+		% currently, this just gets a clean copy of the item and context - we can add noisy encoding later if we so please
+		function this = encodeWM(this, item_idx)
+			% our full vector to encode is the concatenated item + currentContext
+			item = [this.items(:,item_idx); this.currentContext];
+
+			% just add them in
+			this.WMStore = item;
+			this.WMStoreItemIdcs = item_idx;
+
+			this.lastWMRehearsalTime = this.currentTimeInTrial;
+		end
+
+		function [this] = updateTrialTime(this)
+			this.currentTimeInTrial = this.currentTimeInTrial + this.timeBetweenPresentations;
+		end
+
+		function [this, numDecayedFeatures] = decayWMtrace(this)
+			numElapsedTimeUnits = this.currentTimeInTrial - this.lastWMRehearsalTime;
+			decayedWMtrace = this.WMStore;
+			numDecayedFeatures = 0;
+		
+			for t = 1 : numElapsedTimeUnits
+				% decide if we'll flip off a feature
+				if rand() < this.probFeatureDecayWMTrace
+					numDecayedFeatures = numDecayedFeatures + 1;
+
+					% randomly select a feature to modify - making sure we only use features that haven't already been turned off
+					feature_idx_to_turn_off = randi(numel(decayedWMtrace));
+
+					% second part makes sure we don't get stuck in an infinite loop
+					while (decayedWMtrace(feature_idx_to_turn_off) == 0 && sum(decayedWMtrace) ~= 0 )
+						feature_idx_to_turn_off = randi(numel(decayedWMtrace));
+					end
+
+					decayedWMtrace(feature_idx_to_turn_off) = 0;
+				end
+			end
+
+			this.WMStore = decayedWMtrace;
+		end
+
+		function [this, performedRehearsal, didRetrievalReturnDifItem] = updateWMifNeeded(this)
+			didRetrievalReturnDifItem = false;
+			performedRehearsal = false;
+
+			% check if we've exceeded our rehearsal thresh
+			if (this.currentTimeInTrial - this.lastWMRehearsalTime) >= this.rehearsalFreqWM
+
+				performedRehearsal = true; this.lastWMRehearsalTime = this.currentTimeInTrial;
+
+				% cue EM using WM trace
+				[odds_ratio, ~, ~, odds_ratio_all_EM_traces] = this.getOddsRatioForItem(this.WMStore);
+				% now we find the one with the highest match value and stick that trace into WM
+				[max_match max_match_idx] = max(odds_ratio_all_EM_traces);
+
+				% actually swap out the contents
+				this.WMStore = this.EMStore(:,max_match_idx);
+				oldItemIdx = this.WMStoreItemIdcs;
+				this.WMStoreItemIdcs = this.EMStoreItemIdcs(max_match_idx);
+
+
+				% just so we can keep track of the success of WM retrievals
+				if this.WMStoreItemIdcs ~= oldItemIdx
+					didRetrievalReturnDifItem = true;
+				end
+
+			end
+		end
+
+		function this = encodeEM(this, item_idx)
 			% our full vector to encode is the concatenated item + currentContext
 			item = [this.items(:,item_idx); this.currentContext];
 
@@ -230,6 +325,18 @@ classdef REM
 
 		end
 
+		function [WM_match_value]  = probeWM(this,item_idx)
+			% our full vector to encode is the concatenated item + currentContext
+			target_item = this.items(:,item_idx);
+
+			% we compare them separately because they were generated with different geometric base rates
+			WMtraceItemFeaturesOnly = this.WMStore(1:this.numItemFeatures);
+			WMtraceContextFeaturesOnly = this.WMStore(this.numItemFeatures+1:end);
+
+			% finally calculate the match strength
+			WM_match_value = REMplusWM.itemTraceOddsRatioHelper(WMtraceItemFeaturesOnly, target_item, 0.5, this.geometricDistP) * REMplusWM.itemTraceOddsRatioHelper(WMtraceContextFeaturesOnly, this.currentContext, 0.5, this.contextGeometricDistP);
+		end
+
 		function this = addEncodedItemToEMStore(this,encoded_item_idx, encoded_trace)
 			% encoded_item_idx corresponds to which item number the encoded trace belongs to i.e. we selected item 5 as our target
 			% underwent the noisy encoding process to generate encoded_trace, and therefore encoded_item_idx is equal to 5
@@ -244,7 +351,7 @@ classdef REM
 					% memory trace's item has been stored, let's replace it with the memory trace for this item from this trial
 					this.EMStore(:,EM_store_location_for_item) = encoded_trace;
 				end
-			else % this is the logic where we don't ever REPLACE memory traces
+			else % this is the logic where we DON'T REPLACE memory traces
 				% let's just append it to the end
 				this.EMStore = [this.EMStore encoded_trace];
 				this.EMStoreItemIdcs = [this.EMStoreItemIdcs encoded_item_idx];
@@ -255,20 +362,20 @@ classdef REM
 	end
 
 	methods(Static = true)
-		function [odds_ratio, p_old_given_data, p_new_given_data] = itemTraceOddsRatioHelper(EM_trace, item, c, geometric_dist_p)
-			match_idcs = find(EM_trace == item);
+		function [odds_ratio, p_old_given_data, p_new_given_data] = itemTraceOddsRatioHelper(trace, item, c, geometric_dist_p)
+			match_idcs = find(trace == item);
 			num_matches = numel(match_idcs);
 			odds_ratio = 1;
 			p_old_given_data = 1.0;
 			p_new_given_data = 1.0;
 			for match_idx = 1 : num_matches
-				feature_value = EM_trace(match_idcs(match_idx));
+				feature_value = trace(match_idcs(match_idx));
 
 				% in the Shiffrin paper, this is the product on the right half of the right hand side of equation A7 
 				p_old_given_data = p_old_given_data * (c + (1-c)*geometric_dist_p*(1-geometric_dist_p)^(feature_value-1));
 				p_new_given_data = p_new_given_data * (geometric_dist_p*(1-geometric_dist_p)^(feature_value-1)) ;
 			end
-			num_mismatches = numel(EM_trace) - num_matches;
+			num_mismatches = numel(trace) - num_matches;
 			% in the Shiffrin paper, this comes out to the left half of the right side of equation A7 in the appendix
 			p_old_given_data = p_old_given_data * (1 - c) ^ num_mismatches;
 			odds_ratio = p_old_given_data / p_new_given_data;
