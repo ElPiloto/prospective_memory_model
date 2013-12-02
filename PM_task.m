@@ -4,8 +4,9 @@ classdef PM_task
 	properties(Constant = true)
 		numSimulations = 20000;
 		numTrials = 1000;
-		maxPresentationsPerTrial = 15;
-		numUniqueItems = 100;
+		maxPresentationsPerTrial = 20;
+		numUniqueItems = 20;
+		sameNumPresentations = true;
 		SETTINGS_MAT_FILE = 'EM_trial_simulations.mat';
 	end
 
@@ -18,8 +19,12 @@ classdef PM_task
 			% general gist is to select a random number of presentations for a trial, then randomly select that many items for the trial
 			% and set the target to be the last item for for that trial
 			for trial = 1 : numTrials
-				% select how many images will be presented on this trial
-				num_presentations = randi(PM_task.maxPresentationsPerTrial);
+				if PM_task.sameNumPresentations
+					num_presentations = PM_task.maxPresentationsPerTrial;
+				else
+					% select how many images will be presented on this trial
+					num_presentations = randi(PM_task.maxPresentationsPerTrial);
+				end
 				% generate sequence of images
 				item_presentations_per_trial{trial} = randsample(numUniqueItems,num_presentations);
 				% grab last presented item
