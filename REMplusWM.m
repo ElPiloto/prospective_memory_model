@@ -63,8 +63,8 @@ classdef REMplusWM
 		% a way of gradually shifting
 		shiftContextAcrossTrials = true;
 		% probability with which we resample a feature, currently chosen so that with 20 context features, we can expect to
-		% resample around two features each time
-		probContextFeatureResample = 0.1;
+		% resample around four features around each time
+		probContextFeatureResample = 0.2;
 
 		% Other settings
 		% this tells us whether we replace or simply append memory traces for EM
@@ -77,9 +77,8 @@ classdef REMplusWM
 		% WM rehearsal frequency
 		rehearsalFreqWM = 20;
 		% feature decay probability: this specifies the probability that a feature gets resampled at each time unit
-		probFeatureDecayWMTrace = 0.1;
-
-		
+		probFeatureDecayWMTrace = 0.05;
+		probFeatureEncodedWM = 0.4;
 
 	end
 	methods
@@ -216,11 +215,46 @@ classdef REMplusWM
 
 		% currently, this just gets a clean copy of the item and context - we can add noisy encoding later if we so please
 		function this = encodeWM(this, item_idx)
+
 			% our full vector to encode is the concatenated item + currentContext
 			item = [this.items(:,item_idx); this.currentContext];
 
+			first_context_feature_idx = size(this.items,1) + 1;
+
+			encoded_trace = zeros(size(item));
+
+			% iterate through each feature
+			for feature_idx = 1 : numel(item)
+				
+				feature_encoded = false;
+				for time_unit = 1 : this.numStorageAttempts
+
+					% decide if we'll encode this feature
+					if rand < this.probFeatureEncodedWM
+						feature_encoded = true;
+
+						% if we decide to encode this feature, decide if we grab the correct value or a random value for this feature
+						if rand < this.probCorrectFeatureEncoded
+							encoded_trace(feature_idx) = item(feature_idx);
+						else % we failed to encode the correct feature, generate random value according to either item feature dist or context feature dist.
+							if feature_idx < first_context_feature_idx
+								encoded_trace(feature_idx) = geornd(this.geometricDistP,1,1) + 1;
+							else % we're dealing with a context feature, let's randomly draw from a geometric dist with the context feature value
+								encoded_trace(feature_idx) = geornd(this.contextGeometricDistP,1,1) + 1;
+							end
+						end
+					end
+					
+					if feature_encoded
+						break;
+					end
+
+				end
+			end
+
+
 			% just add them in
-			this.WMStore = item;
+			this.WMStore = encoded_trace;
 			this.WMStoreItemIdcs = item_idx;
 
 			this.lastWMRehearsalTime = this.currentTimeInTrial;
@@ -334,7 +368,8 @@ classdef REMplusWM
 			WMtraceContextFeaturesOnly = this.WMStore(this.numItemFeatures+1:end);
 
 			% finally calculate the match strength
-			WM_match_value = REMplusWM.itemTraceOddsRatioHelper(WMtraceItemFeaturesOnly, target_item, 0.5, this.geometricDistP) * REMplusWM.itemTraceOddsRatioHelper(WMtraceContextFeaturesOnly, this.currentContext, 0.5, this.contextGeometricDistP);
+			WM_match_value = REMplusWM.itemTraceOddsRatioHelper(WMtraceItemFeaturesOnly, target_item, this.probCorrectFeatureEncoded, this.geometricDistP) ...
+									* REMplusWM.itemTraceOddsRatioHelper(WMtraceContextFeaturesOnly, this.currentContext,  this.probCorrectFeatureEncoded, this.contextGeometricDistP);
 		end
 
 		function this = addEncodedItemToEMStore(this,encoded_item_idx, encoded_trace)

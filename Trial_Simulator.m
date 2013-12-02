@@ -20,7 +20,7 @@ classdef Trial_Simulator
 		% this will contain the EM strengths for past targets
 		EMpastTargetsStrengthsPerTrial={};
 		% here we'll hold the context vectors across all trials
-		contextVectors = {};
+		contextVectors = [];
 		% this will hold the odds ratio for each item presented
 		WMpresentationStrengthsPerTrial={};
 		% this will contain the EM strengths for past lures
@@ -64,6 +64,12 @@ classdef Trial_Simulator
 				target_idx = this.targetsPerTrial(trial);
 				this.REMsim = this.REMsim.setupNewTrial(target_idx);
 				num_presentations = numel(this.itemPresentationsPerTrial{trial});
+				this.contextVectors(:,trial) = this.REMsim.currentContext();
+                
+                this.WMpastLureStrengthsPerTrial{trial} = [];
+                this.EMpastLureStrengthsPerTrial{trial} = [];
+                this.WMpastTargetsStrengthsPerTrial{trial} = [];
+                this.EMpastTargetsStrengthsPerTrial{trial} = [];
 
 				% here we present the images for this trial and store all the info
 				for presentation_idx = 1 : num_presentations
@@ -87,6 +93,11 @@ classdef Trial_Simulator
 					% this should always be the last item presented that gets recorded as the target, but let's just go ahead and make sure we're doing what we think we're doing with this check
 					if presented_item_idx == target_idx
 						this.presentationTargetIndicator{trial}(presentation_idx) = 1;
+						this.WMpastTargetsStrengthsPerTrial{trial}(end+1) = this.WMpresentationStrengthsPerTrial{trial}(presentation_idx);
+						this.EMpastTargetsStrengthsPerTrial{trial}(end+1) = this.EMpresentationStrengthsPerTrial{trial}(presentation_idx);
+					else
+						this.WMpastLureStrengthsPerTrial{trial}(end+1) = this.WMpresentationStrengthsPerTrial{trial}(presentation_idx);
+						this.EMpastLureStrengthsPerTrial{trial}(end+1) = this.EMpresentationStrengthsPerTrial{trial}(presentation_idx);
 					end
 				end
 
