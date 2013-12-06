@@ -30,7 +30,6 @@ classdef PM_task
 				% grab last presented item
 				targets(trial) = item_presentations_per_trial{trial}(end);
 			end
-			numUniqueItems = PM_task.numUniqueItems;
 
 			save(PM_task.SETTINGS_MAT_FILE,'-v7.3');
 		end
