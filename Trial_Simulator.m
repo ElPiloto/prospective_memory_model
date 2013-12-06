@@ -40,6 +40,8 @@ classdef Trial_Simulator
 		numSamplesPerPresentationTarget = 10;
 		targetsPerTrial = [];
 		itemPresentationsPerTrial = [];
+        turnOffWMdecay = false;
+        turnOffWMrehearsal = false;
 	end
 
 	% properties(Constant = true);
@@ -57,6 +59,14 @@ classdef Trial_Simulator
 			% initialize our simulator and the list items
 			this.REMsim = REMplusWM(this.numUniqueItems,this.tid);
 
+            if this.turnOffWMdecay
+                this.REMsim = this.REMsim.turnOffWMdecay;
+            end
+
+            if this.turnOffWMrehearsal
+				this.REMsim = this.REMsim.turnOffWMrehearsal;
+			end
+            
 			for trial = 1 : this.numTrials
 				this.currentTrial = trial;
 
@@ -118,6 +128,9 @@ classdef Trial_Simulator
 
 		function this = load_settings_if_present(this)
 			tid = getenv('SGE_TASK_ID');
+			% checking to see if this affects the issue on the cluster
+			% where jobs will be running - but
+			%pause(mod(str2num(tid),50));
 			if ~isempty(tid) && exist(PM_task.SETTINGS_MAT_FILE,'file')
 				this.tid = tid;
 				load(PM_task.SETTINGS_MAT_FILE);

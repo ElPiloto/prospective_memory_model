@@ -289,6 +289,14 @@ classdef REMplusWM
 			this.WMStore = decayedWMtrace;
 		end
 
+		function [this ] = turnOffWMrehearsal(this)
+			this.rehearsalFreqWM = Inf;
+		end
+
+		function [this] = turnOffWMdecay(this)
+			this.probFeatureDecayWMTrace = 0;
+		end
+
 		function [this, performedRehearsal, didRetrievalReturnDifItem] = updateWMifNeeded(this)
 			didRetrievalReturnDifItem = false;
 			performedRehearsal = false;

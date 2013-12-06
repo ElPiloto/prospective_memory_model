@@ -26,7 +26,16 @@ classdef PM_task
 					num_presentations = randi(PM_task.maxPresentationsPerTrial);
 				end
 				% generate sequence of images
-				item_presentations_per_trial{trial} = randsample(numUniqueItems,num_presentations);
+				% if we have more trials than unique items, then we necessarily have to sample with replacement
+				% but in the opposing case, more items than trials, let's make sure we don't ever repeat presentations of
+				% any items by sampling WITHOUT replacement
+				if numUniqueItems < numTrials
+					item_presentations_per_trial{trial} = randsample(numUniqueItems,num_presentations);
+				else
+					item_presentations_per_trial{trial} = randsample(numUniqueItems,num_presentations,false);
+					% double-check we're actually sampling without replacement
+					assert(numel(unique(item_presentations_per_trial{trial})) == num_presentations);
+				end
 				% grab last presented item
 				targets(trial) = item_presentations_per_trial{trial}(end);
 			end
@@ -43,6 +52,21 @@ classdef PM_task
 			else
 				error(['No simulation settings saved to ' PM_task.SETTINGS_MAT_FILE]);
 			end
+		end
+
+		function [] = launchSimulationsAfterGeneratingLocalOrCluster(scriptName)
+			if exist(PM_task.SETTINGS_MAT_FILE,'file')
+				load(PM_task.SETTINGS_MAT_FILE);
+			end
+			[~,compName] = system('hostname');
+			onCluster = strmatch('node',compName);
+			if onCluster
+				unix(sprintf('submit -tc 50 %d %s.m ',numSimulations,scriptName));
+			else
+				setenv('SGE_TASK_ID','1');
+				eval(scriptName);
+			end
+
 		end
 
 
