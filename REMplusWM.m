@@ -360,16 +360,10 @@ classdef REMplusWM
 		end
 
 		function [WM_match_value]  = probeWM(this,item_idx)
-			% our full vector to encode is the concatenated item + currentContext
-			target_item = this.items(:,item_idx);
 
-			% we compare them separately because they were generated with different geometric base rates
-			WMtraceItemFeaturesOnly = this.WMStore(1:this.numItemFeatures);
-			WMtraceContextFeaturesOnly = this.WMStore(this.numItemFeatures+1:end);
-
-			% finally calculate the match strength
-			WM_match_value = REMplusWM.itemTraceOddsRatioHelper(WMtraceItemFeaturesOnly, target_item, this.probCorrectFeatureEncoded, this.geometricDistP) ...
-									* REMplusWM.itemTraceOddsRatioHelper(WMtraceContextFeaturesOnly, this.currentContext,  this.probCorrectFeatureEncoded, this.contextGeometricDistP);
+			target_item = [this.items(:,item_idx); this.currentContext];
+			WM_match_value = calculateItemTraceOddsRatio(this,this.WMStore, target_item);
+            
 		end
 
 		function this = addEncodedItemToEMStore(this,encoded_item_idx, encoded_trace)
