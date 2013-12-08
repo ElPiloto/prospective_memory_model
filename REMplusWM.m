@@ -49,7 +49,8 @@ classdef REMplusWM
 		% this is c in the Shiffrin paper;
 		% it tells us what the probability of encoding the CORRECT feature value
 		% is, IF we're going to store anything at all for this feature
-		probCorrectFeatureEncoded = 0.7;
+		%probCorrectFeatureEncoded = 0.7; this is the value in Shiffrin paper, for now want to turn this off 
+		probCorrectFeatureEncoded = 1.0;
 
 		% Context settings - some things here have no equivalent in the REM model/paper
 		% this is 
@@ -106,10 +107,15 @@ classdef REMplusWM
 			end
 
 			% encode the current item with the current context into EM
-			this = encodeEM(this,target_item_idx);
+			[this encoded_EM_trace] = encodeEM(this,target_item_idx);
 
 			% encode the current item with the current context into WM
-			this = encodeWM(this,target_item_idx);
+			% as exactly the same memory trace encoded into EM - ideally
+			% this would actually be the opposite way; WM encodes something
+			% and EM gets a copy of that encoded trace - that's the logical
+			% thing, but they're both equivalent in the case where we don't
+			% add additionaly noise to EM encoding
+			this = encodeWM(this,target_item_idx,encoded_EM_trace);
 
 		end
 
@@ -213,8 +219,9 @@ classdef REMplusWM
 		end
 		
 
-		% currently, this just gets a clean copy of the item and context - we can add noisy encoding later if we so please
-		function this = encodeWM(this, item_idx)
+		% this is essentially deprecated, leaving it here in case we decide to revert or explore the effect of entirely independent
+		% WM and EM systems
+		function this = encodeWMseparateEncoding(this, item_idx)
 
 			% our full vector to encode is the concatenated item + currentContext
 			item = [this.items(:,item_idx); this.currentContext];
@@ -257,6 +264,12 @@ classdef REMplusWM
 			this.WMStore = encoded_trace;
 			this.WMStoreItemIdcs = item_idx;
 
+			this.lastWMRehearsalTime = this.currentTimeInTrial;
+		end
+
+		function this = encodeWM(this, item_idx, trace_from_EM_encoding)
+			this.WMStore = trace_from_EM_encoding;
+			this.WMStoreItemIdcs = item_idx;
 			this.lastWMRehearsalTime = this.currentTimeInTrial;
 		end
 
@@ -330,7 +343,7 @@ classdef REMplusWM
 			end
 		end
 
-		function this = encodeEM(this, item_idx)
+		function [this encoded_trace] = encodeEM(this, item_idx)
 			% our full vector to encode is the concatenated item + currentContext
 			item = [this.items(:,item_idx); this.currentContext];
 
