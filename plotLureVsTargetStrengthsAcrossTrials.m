@@ -1,5 +1,6 @@
 
 numTrials = numel(this.WMpresentationStrengthsPerTrial);
+numPresentationsPerTrial = size(this.presentationTargetIndicator{1});
 
 EM_targets = [];
 EM_lures = [];
@@ -34,6 +35,7 @@ hold all;
 plot(WM_targets); plot(WM_lures,'--');
 plot(zeros(size(EM_targets,2),1),'k');
 legend({'WM Target Probes' 'WM Lure Probes'});
+%title({'20'  });
 
 
 figure; hold all;

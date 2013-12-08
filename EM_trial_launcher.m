@@ -2,7 +2,7 @@
 	EM_simulation = Trial_Simulator();
 	EM_simulation = EM_simulation.ILL_SIM_YOU_LATER();
 
-	saveToFileLocalOrCluster(simulation);
+	saveToFileLocalOrCluster(EM_simulation);
 	exitIfOnCluster();
 	% catch err
 % 	disp(err.message());

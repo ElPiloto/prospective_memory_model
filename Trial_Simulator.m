@@ -76,10 +76,17 @@ classdef Trial_Simulator
 				num_presentations = numel(this.itemPresentationsPerTrial{trial});
 				this.contextVectors(:,trial) = this.REMsim.currentContext();
                 
-                this.WMpastLureStrengthsPerTrial{trial} = [];
-                this.EMpastLureStrengthsPerTrial{trial} = [];
-                this.WMpastTargetsStrengthsPerTrial{trial} = [];
-                this.EMpastTargetsStrengthsPerTrial{trial} = [];
+				if trial > 1
+					this.WMpastLureStrengthsPerTrial{trial} = this.WMpastLureStrengthsPerTrial{trial-1};
+					this.EMpastLureStrengthsPerTrial{trial} = this.EMpastLureStrengthsPerTrial{trial-1};
+					this.WMpastTargetsStrengthsPerTrial{trial} = this.WMpastTargetsStrengthsPerTrial{trial-1};
+					this.EMpastTargetsStrengthsPerTrial{trial} = this.EMpastTargetsStrengthsPerTrial{trial-1};
+				else
+					this.WMpastLureStrengthsPerTrial{trial} = [];
+					this.EMpastLureStrengthsPerTrial{trial} = [];
+					this.WMpastTargetsStrengthsPerTrial{trial} = [];
+					this.EMpastTargetsStrengthsPerTrial{trial} = [];
+				end
 
 				% here we present the images for this trial and store all the info
 				for presentation_idx = 1 : num_presentations
@@ -116,21 +123,10 @@ classdef Trial_Simulator
 				end
 
 			end
-			save_file = ['EM_sim_results_' this.tid '.mat'];
-			save(save_file,'this','-v7.3');
-			% we also save a barebones version
-			save_file = ['EM_sim_results_' this.tid 'barebones.mat'];
-			p_old = this.EMpresentationProbOld;
-			p_new = this.EMpresentationProbNew;
-			p_target_indicator = this.presentationTargetIndicator;
-			save(save_file,'p_old','p_new','p_target_indicator','-v7.3');
 		end
 
 		function this = load_settings_if_present(this)
 			tid = getenv('SGE_TASK_ID');
-			% checking to see if this affects the issue on the cluster
-			% where jobs will be running - but
-			%pause(mod(str2num(tid),50));
 			if ~isempty(tid) && exist(PM_task.SETTINGS_MAT_FILE,'file')
 				this.tid = tid;
 				load(PM_task.SETTINGS_MAT_FILE);

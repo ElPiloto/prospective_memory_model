@@ -318,7 +318,12 @@ classdef REMplusWM
 
 
 				% just so we can keep track of the success of WM retrievals
-				if this.WMStoreItemIdcs ~= oldItemIdx
+				% this code takes advantage of the fact that the last memory trace encoded into
+				% EMStore is the original one for this trial, this way we can know that we retrieved
+				% the correct memory trace (= target item + current context) as opposed to just the
+				% correct item (that could have a different context from a previous trial attached to
+				% it )
+				if max_match_idx ~= size(this.EMStore,2)
 					didRetrievalReturnDifItem = true;
 				end
 
