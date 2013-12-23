@@ -44,17 +44,19 @@ classdef REMplusWM
 
  		% this is referred to as u^* in the Shiffrin paper; 
 		% it basically tells us, at each timestep, what our probability is of encoding a particular feature (not necessarily the CORRECT feature)
-		probFeatureEncoded = 0.04;
+		probFeatureEncoded = 0.09;
 
 		% this is c in the Shiffrin paper;
 		% it tells us what the probability of encoding the CORRECT feature value
 		% is, IF we're going to store anything at all for this feature
 		%probCorrectFeatureEncoded = 0.7; this is the value in Shiffrin paper, for now want to turn this off 
-		probCorrectFeatureEncoded = 1.0;
+		%probCorrectFeatureEncoded = 1.0;
+		probCorrectFeatureEncodedWM = 1.0;
+		probCorrectFeatureEncodedEM = 1.0;
 
 		% Context settings - some things here have no equivalent in the REM model/paper
 		% this is 
-		numContextFeatures = 20;
+		numContextFeatures = 5;
 		% this indicates whether or not we should gradually 
 		uniformContextThroughoutTrial = true;
 		% context geometric
@@ -78,7 +80,7 @@ classdef REMplusWM
 		% WM rehearsal frequency
 		rehearsalFreqWM = 20;
 		% feature decay probability: this specifies the probability that a feature gets resampled at each time unit
-		probFeatureDecayWMTrace = 0.05;
+		probFeatureDecayWMTrace = 0.008;
 		probFeatureEncodedWM = 0.4;
 
 	end
@@ -87,6 +89,10 @@ classdef REMplusWM
 		function this = REMplusWM(numUniqueItems, currentRNGSeed)
             this.numUniqueItems = numUniqueItems;
             this.currentRNGSeed = currentRNGSeed;
+
+			% set random number generator to be specific to this simulation number
+			rng(currentRNGSeed);
+
 			this = createListItems(this);
 		end
 
@@ -106,17 +112,14 @@ classdef REMplusWM
 				[this] = this.setTargetItem(target_item_idx);
 			end
 
-			% encode the current item with the current context into EM
-			[this encoded_EM_trace] = encodeEM(this,target_item_idx);
 
 			% encode the current item with the current context into WM
-			% as exactly the same memory trace encoded into EM - ideally
-			% this would actually be the opposite way; WM encodes something
-			% and EM gets a copy of that encoded trace - that's the logical
-			% thing, but they're both equivalent in the case where we don't
-			% add additionaly noise to EM encoding
-			this = encodeWM(this,target_item_idx,encoded_EM_trace);
+			[this encoded_WM_trace] = encodeWM(this,target_item_idx);
 
+			% encode the current item with the current context into EM
+			% as exactly the same memory trace encoded into WM - although
+			% the EM has its own additional noise based on whether or probCorrectFeatureEncodedEM
+			[this ] = encodeEM(this,target_item_idx,encoded_WM_trace);
 		end
 
 		function this = createListItems(this)
@@ -181,7 +184,7 @@ classdef REMplusWM
 			for trace_idx = 1 : num_traces
 				EM_trace = this.EMStore(:,trace_idx);
 
-				[item_trace_likelihood_ratios(trace_idx), p_old_given_data(trace_idx), p_new_given_data(trace_idx)] = this.calculateItemTraceOddsRatio(EM_trace,item);
+				[item_trace_likelihood_ratios(trace_idx), p_old_given_data(trace_idx), p_new_given_data(trace_idx)] = this.calculateItemTraceOddsRatio(EM_trace,item,this.probCorrectFeatureEncodedEM);
             end
             
             odds_ratio = mean(item_trace_likelihood_ratios);
@@ -189,7 +192,7 @@ classdef REMplusWM
 			p_new_given_data = mean(p_new_given_data);
 		end
 
-		function [item_trace_likelihood, p_old_given_data, p_new_given_data] = calculateItemTraceOddsRatio(this, EM_trace, item)
+		function [item_trace_likelihood, p_old_given_data, p_new_given_data] = calculateItemTraceOddsRatio(this, EM_trace, item, prob_correct_feature_encoded)
 			% it's easier to do this if we split it into item features and context feaures
 			EM_trace_context_features = EM_trace(this.numItemFeatures+1:end);
 			EM_trace_item_features = EM_trace(1:this.numItemFeatures);
@@ -208,8 +211,8 @@ classdef REMplusWM
 			EM_trace_context_features = EM_trace_context_features(nonzero_item_idcs);
 
 			% okay, so now we have 2 pairs of vectors we need to match to each other. one pair corresponds to item features, the other to context features
-			[item_trace_likelihood, p_old_given_data, p_new_given_data] = REM.itemTraceOddsRatioHelper(EM_trace_item_features,item_item_features,this.probCorrectFeatureEncoded,this.geometricDistP);
-			[item_trace_likelihood_context, p_old_given_data_context, p_new_given_data_context] = REM.itemTraceOddsRatioHelper(EM_trace_context_features,item_context_features,this.probCorrectFeatureEncoded,this.contextGeometricDistP);
+			[item_trace_likelihood, p_old_given_data, p_new_given_data] = REM.itemTraceOddsRatioHelper(EM_trace_item_features,item_item_features,prob_correct_feature_encoded,this.geometricDistP);
+			[item_trace_likelihood_context, p_old_given_data_context, p_new_given_data_context] = REM.itemTraceOddsRatioHelper(EM_trace_context_features,item_context_features,prob_correct_feature_encoded,this.contextGeometricDistP);
 
 			% here we actually combine the results
 			item_trace_likelihood = item_trace_likelihood * item_trace_likelihood_context;
@@ -241,7 +244,7 @@ classdef REMplusWM
 						feature_encoded = true;
 
 						% if we decide to encode this feature, decide if we grab the correct value or a random value for this feature
-						if rand < this.probCorrectFeatureEncoded
+						if rand < this.probCorrectFeatureEncodedWM
 							encoded_trace(feature_idx) = item(feature_idx);
 						else % we failed to encode the correct feature, generate random value according to either item feature dist or context feature dist.
 							if feature_idx < first_context_feature_idx
@@ -267,11 +270,11 @@ classdef REMplusWM
 			this.lastWMRehearsalTime = this.currentTimeInTrial;
 		end
 
-		function this = encodeWM(this, item_idx, trace_from_EM_encoding)
-			this.WMStore = trace_from_EM_encoding;
-			this.WMStoreItemIdcs = item_idx;
-			this.lastWMRehearsalTime = this.currentTimeInTrial;
-		end
+		% function this = encodeWM(this, item_idx, trace_from_EM_encoding)
+		% 	this.WMStore = trace_from_EM_encoding;
+		% 	this.WMStoreItemIdcs = item_idx;
+		% 	this.lastWMRehearsalTime = this.currentTimeInTrial;
+		% end
 
 		function [this] = updateTrialTime(this)
 			this.currentTimeInTrial = this.currentTimeInTrial + this.timeBetweenPresentations;
@@ -310,6 +313,10 @@ classdef REMplusWM
 			this.probFeatureDecayWMTrace = 0;
 		end
 
+		function [this] = setEMencodingNoise(this,prob_correct_feature_encoded)
+			this.probCorrectFeatureEncodedEM = prob_correct_feature_encoded;
+		end
+
 		function [this, performedRehearsal, didRetrievalReturnDifItem] = updateWMifNeeded(this)
 			didRetrievalReturnDifItem = false;
 			performedRehearsal = false;
@@ -343,7 +350,7 @@ classdef REMplusWM
 			end
 		end
 
-		function [this encoded_trace] = encodeEM(this, item_idx)
+		function [this encoded_trace] = encodeEMseparateEncoding(this, item_idx)
 			% our full vector to encode is the concatenated item + currentContext
 			item = [this.items(:,item_idx); this.currentContext];
 
@@ -362,7 +369,7 @@ classdef REMplusWM
 						feature_encoded = true;
 
 						% if we decide to encode this feature, decide if we grab the correct value or a random value for this feature
-						if rand < this.probCorrectFeatureEncoded
+						if rand < this.probCorrectFeatureEncodedEM
 							encoded_trace(feature_idx) = item(feature_idx);
 						else % we failed to encode the correct feature, generate random value according to either item feature dist or context feature dist.
 							if feature_idx < first_context_feature_idx
@@ -385,10 +392,81 @@ classdef REMplusWM
 
 		end
 
+		% this is the version of encoding EM that's tied to the WM encoding process
+		function this = encodeEM(this, item_idx, trace_from_WM_encoding)
+			EM_encoded_trace = trace_from_WM_encoding;
+
+			first_context_feature_idx = size(this.items,1) + 1;
+
+			% find non-zero entries and noisify if settings specify
+			% iterate through each feature
+			for feature_idx = 1 : numel(EM_encoded_trace)
+
+				if EM_encoded_trace(feature_idx) ~= 0
+					% if we decide to encode this feature, decide if we grab the correct value or a random value for this feature
+					if rand >= this.probCorrectFeatureEncodedEM
+						% we failed to encode the correct feature, generate random value according to either item feature dist or context feature dist.
+						if feature_idx < first_context_feature_idx
+							EM_encoded_trace(feature_idx) = geornd(this.geometricDistP,1,1) + 1;
+						else % we're dealing with a context feature, let's randomly draw from a geometric dist with the context feature value
+							EM_encoded_trace(feature_idx) = geornd(this.contextGeometricDistP,1,1) + 1;
+						end
+					end
+				end
+					
+
+			end
+
+			this = this.addEncodedItemToEMStore(item_idx, EM_encoded_trace);
+		end
+
+		function [this encoded_trace] = encodeWM(this, item_idx)
+			% our full vector to encode is the concatenated item + currentContext
+			item = [this.items(:,item_idx); this.currentContext];
+
+			first_context_feature_idx = size(this.items,1) + 1;
+
+			encoded_trace = zeros(size(item));
+
+			% iterate through each feature
+			for feature_idx = 1 : numel(item)
+				
+				feature_encoded = false;
+				for time_unit = 1 : this.numStorageAttempts
+
+					% decide if we'll encode this feature
+					if rand < this.probFeatureEncoded
+						feature_encoded = true;
+
+						% if we decide to encode this feature, decide if we grab the correct value or a random value for this feature
+						if rand < this.probCorrectFeatureEncodedWM
+							encoded_trace(feature_idx) = item(feature_idx);
+						else % we failed to encode the correct feature, generate random value according to either item feature dist or context feature dist.
+							if feature_idx < first_context_feature_idx
+								encoded_trace(feature_idx) = geornd(this.geometricDistP,1,1) + 1;
+							else % we're dealing with a context feature, let's randomly draw from a geometric dist with the context feature value
+								encoded_trace(feature_idx) = geornd(this.contextGeometricDistP,1,1) + 1;
+							end
+						end
+					end
+					
+					if feature_encoded
+						break;
+					end
+
+				end
+			end
+
+			this.WMStore = encoded_trace;
+			this.WMStoreItemIdcs = item_idx;
+			this.lastWMRehearsalTime = this.currentTimeInTrial;
+
+		end
+
 		function [WM_match_value]  = probeWM(this,item_idx)
 
 			target_item = [this.items(:,item_idx); this.currentContext];
-			WM_match_value = calculateItemTraceOddsRatio(this,this.WMStore, target_item);
+			WM_match_value = calculateItemTraceOddsRatio(this,this.WMStore, target_item, this.probCorrectFeatureEncodedEM);
             
 		end
 

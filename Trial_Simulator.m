@@ -42,6 +42,7 @@ classdef Trial_Simulator
 		itemPresentationsPerTrial = [];
         turnOffWMdecay = false;
         turnOffWMrehearsal = false;
+		EMencodingNoise = NaN;
 	end
 
 	% properties(Constant = true);
@@ -57,7 +58,7 @@ classdef Trial_Simulator
 
 		function this = ILL_SIM_YOU_LATER(this)
 			% initialize our simulator and the list items
-			this.REMsim = REMplusWM(this.numUniqueItems,this.tid);
+			this.REMsim = REMplusWM(this.numUniqueItems,str2num(this.tid));
 
             if this.turnOffWMdecay
                 this.REMsim = this.REMsim.turnOffWMdecay;
@@ -65,6 +66,10 @@ classdef Trial_Simulator
 
             if this.turnOffWMrehearsal
 				this.REMsim = this.REMsim.turnOffWMrehearsal;
+			end
+
+			if ~isnan(this.EMencodingNoise)
+				this.REMsim = this.REMsim.setEMencodingNoise(this.EMencodingNoise);
 			end
             
 			for trial = 1 : this.numTrials

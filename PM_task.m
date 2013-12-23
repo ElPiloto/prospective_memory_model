@@ -4,7 +4,7 @@ classdef PM_task
 	properties(Constant = true)
 		numSimulations = 20000;
 		numTrials = 1000;
-		maxPresentationsPerTrial = 20;
+		maxPresentationsPerTrial = 10;
 		numUniqueItems = 20;
 		sameNumPresentations = true;
 		SETTINGS_MAT_FILE = 'EM_trial_simulations.mat';
@@ -12,7 +12,11 @@ classdef PM_task
 
 	methods(Static = true)
 		% this function 
-		function [] = generateSimulationTargetsAndLures(numTrials,numUniqueItems,numSimulations)
+		function [] = generateSimulationTargetsAndLures(numTrials,numUniqueItems,numSimulations,maxPresentationsPerTrial)
+			if nargin < 4
+				maxPresentationsPerTrial = PM_task.maxPresentationsPerTrial;
+			end
+
 			targets = zeros(1,numTrials);
 			item_presentations_per_trial = cell(1,numTrials);
 
@@ -20,10 +24,10 @@ classdef PM_task
 			% and set the target to be the last item for for that trial
 			for trial = 1 : numTrials
 				if PM_task.sameNumPresentations
-					num_presentations = PM_task.maxPresentationsPerTrial;
+					num_presentations = maxPresentationsPerTrial;
 				else
 					% select how many images will be presented on this trial
-					num_presentations = randi(PM_task.maxPresentationsPerTrial);
+					num_presentations = randi(maxPresentationsPerTrial);
 				end
 				% generate sequence of images
 				% if we have more trials than unique items, then we necessarily have to sample with replacement
@@ -48,7 +52,7 @@ classdef PM_task
 				load(PM_task.SETTINGS_MAT_FILE);
 
 				% here is the rondo command we'll run
-				unix(sprintf('submit -tc 50 %s EM_trial_launcher.m ',numSimulations));
+				unix(sprintf('submit -tc 60 %s EM_trial_launcher.m ',numSimulations));
 			else
 				error(['No simulation settings saved to ' PM_task.SETTINGS_MAT_FILE]);
 			end
@@ -61,7 +65,7 @@ classdef PM_task
 			[~,compName] = system('hostname');
 			onCluster = strmatch('node',compName);
 			if onCluster
-				unix(sprintf('submit -tc 50 %d %s.m ',numSimulations,scriptName));
+				unix(sprintf('submit -tc 60 %d %s.m ',numSimulations,scriptName));
 			else
 				setenv('SGE_TASK_ID','1');
 				eval(scriptName);
