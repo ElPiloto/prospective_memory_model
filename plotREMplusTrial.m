@@ -1,4 +1,4 @@
-%function [  ] = plotREMplusTrial(this, trial_number )
+function [  ] = plotREMplusTrial(this, trial_number )
 % [  ] = PLOTREMPLUSTRIAL(trial_number)
 % Purpose
 % 
@@ -48,5 +48,5 @@ xlim([0.5 numPresentations+0.5]);
 title({'Blue = WM, Red = EM - Green = Rehearsal Success' 'Numbers across top indicate # decayed features' ['Trial # ' num2str(trial_number) ] });
 
 
-%end
+end
 

@@ -1,12 +1,19 @@
-function [ avg_rehearsal_failures ] = plotRehearsalFailuresOverTrials( this )
-% [  ] = PLOTREHEARSALFAILURESOVERTRIALS(this)
+function [ avg_rehearsal_failures ] = plotRehearsalFailuresOverTrials( simulation, smooth_size)
+% [  ] = PLOTREHEARSALFAILURESOVERTRIALS(simulation)
 % Purpose
 % 
-% this - a trial simulator object
+% This function expects either a Trial_Simulator object or a struct returned from
+% aggregate_sim_results_from_cluster_and_collapse - in both cases, you only 
+% plot the results from a single simulation (in the latter case, multiple simulations
+% have been squashed down to make a single avg simulation)
+%
 %
 % INPUT
 %
-% this - a trial simulator object 
+% simulation - a trial simulator object 
+% smooth_size - can be either empty or 0(no smoothing), a positive integer for smoothing, or 'auto'
+% 				to specify smoothing with window = 20% of number of trials
+%
 %
 % OUTPUT
 % 
@@ -15,21 +22,33 @@ function [ avg_rehearsal_failures ] = plotRehearsalFailuresOverTrials( this )
 % EXAMPLE USAGE:
 %
 % 
-% plotRehearsalFailuresOverTrials(this)
+% plotRehearsalFailuresOverTrials(simulation)
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+if nargin < 2
+	smooth_size = 0;
+end
+
 avg_rehearsal_failures = [];
 
-for trial_number = 1 : this.numTrials
-	avg_rehearsal_failures(trial_number) = any(this.WMrehearsalFailuresPerTrial{trial_number} > 0 );
+for trial_number = 1 : simulation.numTrials
+	avg_rehearsal_failures(trial_number) = any(simulation.WMrehearsalFailuresPerTrial{trial_number} > 0 );
 end
 
 %figure(8);
-plot(smooth(avg_rehearsal_failures,floor(this.numTrials * 0.2)));
+if smooth_size == 0
+	plot(avg_rehearsal_failures);
+else
+	if isstr(smooth_size)
+		plot(smooth(avg_rehearsal_failures,floor(simulation.numTrials * 0.2)));
+	elseif isinteger(smooth_size) && smooth_size > 0
+		plot(smooth(avg_rehearsal_failures,smooth_size));
+	end
+end
 xlabel('Trial Number');
 ylabel('% Failures In Trials');
-title('How often rehearsal attempt retrieved different item than WM contents');
+title('How often rehearsal retrieved different trace than WM trace');
 
 
 end
