@@ -14,7 +14,7 @@ for trial_number = 1 : numTrials
 	labels = zeros(size(this_trial_EM));
 	labels(1:numel(this.EMpastTargetsStrengthsPerTrial{trial_number})) = 1;
 	labels_EM = [labels_EM labels];
-	[~,~,~,EM_auc(trial_number)] = perfcurve(labels_EM,concatenated_strengths_EM,1);
+	[~,~,~,EM_auc(trial_number)] = perfcurve2(labels_EM,concatenated_strengths_EM,1);
 
 	% gather WM
 	this_trial_WM = [this.WMpastTargetsStrengthsPerTrial{trial_number} this.WMpastLureStrengthsPerTrial{trial_number}] ;
@@ -22,7 +22,7 @@ for trial_number = 1 : numTrials
 	labels = zeros(size(this_trial_WM));
 	labels(1:numel(this.WMpastTargetsStrengthsPerTrial{trial_number})) = 1;
 	labels_WM = [labels_WM labels];
-	[~,~,~,WM_auc(trial_number)] = perfcurve(labels_WM,concatenated_strengths_WM,1);
+	[~,~,~,WM_auc(trial_number)] = perfcurve2(labels_WM,concatenated_strengths_WM,1);
 
 end
 
