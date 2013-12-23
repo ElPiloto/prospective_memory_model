@@ -16,8 +16,16 @@ num_files = numel(saved_files);
 
 % note that this doesn't enforce a correspondence between file_num and simulation number,
 % but we don't need that for the current code
+result_idx = 0;
 for file_num = 1 : num_files
-	load(['/fastscratch/lpiloto/prosp_mem/' saved_files(file_num).name]);
+	try
+		load(['/fastscratch/lpiloto/prosp_mem/' saved_files(file_num).name]);
+		result_idx = result_idx + 1;
+	catch
+		unix(['rm /fastscratch/lpiloto/prosp_mem/' saved_files(file_num).name]);
+		% remove the problematic file and go to next file!
+		continue;
+	end
 
 	% give folders more descriptive file names
 	if ~exist('beter_dir_name','var')
@@ -38,23 +46,24 @@ for file_num = 1 : num_files
 
 	% store all results separately
 	for trial = 1 : this.numTrials
-		aggResults(file_num).numTrials = this.numTrials;
-		aggResults(file_num).WMdecayedFeatures{trial} = this.WMdecayedFeatures{trial};
-		aggResults(file_num).WMrehearsalFailuresPerTrial{trial} =  this.WMrehearsalFailuresPerTrial{trial};
-		aggResults(file_num).WMpresentationStrengthsPerTrial{trial} =  this.WMpresentationStrengthsPerTrial{trial};
-		aggResults(file_num).EMpresentationStrengthsPerTrial{trial} =  this.EMpresentationStrengthsPerTrial{trial};
-		aggResults(file_num).EMpastLureStrengthsPerTrial{trial} =  this.EMpastLureStrengthsPerTrial{trial};
-		aggResults(file_num).WMpastLureStrengthsPerTrial{trial} =  this.WMpastLureStrengthsPerTrial{trial};
-		aggResults(file_num).EMpastTargetsStrengthsPerTrial{trial} =  this.EMpastTargetsStrengthsPerTrial{trial};
-		aggResults(file_num).WMpastTargetsStrengthsPerTrial{trial} =  this.WMpastTargetsStrengthsPerTrial{trial};
-		aggResults(file_num).WMrehearsalAttemptsPerTrial{trial} = this.WMrehearsalAttemptsPerTrial{trial};
-		aggResults(file_num).presentationTargetIndicator{trial} = this.presentationTargetIndicator{trial};
-		aggResults(file_num).tid = this.tid;
+		aggResults(result_idx).numTrials = this.numTrials;
+		aggResults(result_idx).WMdecayedFeatures{trial} = this.WMdecayedFeatures{trial};
+		aggResults(result_idx).WMrehearsalFailuresPerTrial{trial} =  this.WMrehearsalFailuresPerTrial{trial};
+		aggResults(result_idx).WMpresentationStrengthsPerTrial{trial} =  this.WMpresentationStrengthsPerTrial{trial};
+		aggResults(result_idx).EMpresentationStrengthsPerTrial{trial} =  this.EMpresentationStrengthsPerTrial{trial};
+		aggResults(result_idx).EMpastLureStrengthsPerTrial{trial} =  this.EMpastLureStrengthsPerTrial{trial};
+		aggResults(result_idx).WMpastLureStrengthsPerTrial{trial} =  this.WMpastLureStrengthsPerTrial{trial};
+		aggResults(result_idx).EMpastTargetsStrengthsPerTrial{trial} =  this.EMpastTargetsStrengthsPerTrial{trial};
+		aggResults(result_idx).WMpastTargetsStrengthsPerTrial{trial} =  this.WMpastTargetsStrengthsPerTrial{trial};
+		aggResults(result_idx).WMrehearsalAttemptsPerTrial{trial} = this.WMrehearsalAttemptsPerTrial{trial};
+		aggResults(result_idx).presentationTargetIndicator{trial} = this.presentationTargetIndicator{trial};
 	end
+	aggResults(result_idx).tid = this.tid;
+	aggResults(result_idx).targetsPerTrial = this.targetsPerTrial;
 
 	% simply take the first Trial_Simulator result and make that our aggrergated result to which we'll append subsequent data
 	% and squash
-	if file_num == 1
+	if result_idx == 1
         for trial = 1 : this.numTrials
             collapsedAggResults.numTrials = this.numTrials;
             collapsedAggResults.WMdecayedFeatures{trial} = this.WMdecayedFeatures{trial};
@@ -69,6 +78,7 @@ for file_num = 1 : num_files
             collapsedAggResults.presentationTargetIndicator{trial} = this.presentationTargetIndicator{trial};
         end
 
+		collapsedAggResults(result_idx).targetsPerTrial = this.targetsPerTrial;
     else
 
         for trial = 1 : this.numTrials
