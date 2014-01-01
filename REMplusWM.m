@@ -36,7 +36,7 @@ classdef REMplusWM
 		% this is how many items we have in each list
 		numUniqueItems = 10;
 		% this is w in the Shiffrin paper
-		numItemFeatures = 20;
+		numItemFeatures = 40;
 		% this is t in the Shiffrin paper
 		numStorageAttempts = 10;
  		% this is g in the paper a.k.a environmental base rate for a feature
@@ -44,7 +44,7 @@ classdef REMplusWM
 
  		% this is referred to as u^* in the Shiffrin paper; 
 		% it basically tells us, at each timestep, what our probability is of encoding a particular feature (not necessarily the CORRECT feature)
-		probFeatureEncoded = 0.09;
+		probFeatureEncoded = 0.9;
 
 		% this is c in the Shiffrin paper;
 		% it tells us what the probability of encoding the CORRECT feature value
@@ -329,13 +329,11 @@ classdef REMplusWM
 				% cue EM using WM trace
 				[odds_ratio, ~, ~, odds_ratio_all_EM_traces] = this.getOddsRatioForItem(this.WMStore);
 				% now we find the one with the highest match value and stick that trace into WM
-				[max_match max_match_idx] = max(odds_ratio_all_EM_traces);
+				[max_match max_match_idxs] = max_values(odds_ratio_all_EM_traces);
 
-				% actually swap out the contents
-				this.WMStore = this.EMStore(:,max_match_idx);
-				oldItemIdx = this.WMStoreItemIdcs;
-				this.WMStoreItemIdcs = this.EMStoreItemIdcs(max_match_idx);
-
+				% if our max corresponds to the last EM trace, then we've retrieved successfully
+				% because the last EM trace was the one most recently encoded AKA the one from this trial, duuuuh
+				last_EM_trace_idx = size(this.EMStore,2);
 
 				% just so we can keep track of the success of WM retrievals
 				% this code takes advantage of the fact that the last memory trace encoded into
@@ -343,9 +341,17 @@ classdef REMplusWM
 				% the correct memory trace (= target item + current context) as opposed to just the
 				% correct item (that could have a different context from a previous trial attached to
 				% it )
-				if max_match_idx ~= size(this.EMStore,2)
+				if any(find(max_match_idxs == last_EM_trace_idx))
+					max_match_idx = last_EM_trace_idx;
+				else % if we have multiple max values, let's choose a random one
+					max_match_idx = max_match_idxs(randi(numel(max_match_idxs)));
 					didRetrievalReturnDifItem = true;
 				end
+
+				% actually swap out the contents
+				this.WMStore = this.EMStore(:,max_match_idx);
+				oldItemIdx = this.WMStoreItemIdcs;
+				this.WMStoreItemIdcs = this.EMStoreItemIdcs(max_match_idx);
 
 			end
 		end
