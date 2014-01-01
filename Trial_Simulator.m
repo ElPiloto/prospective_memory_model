@@ -31,6 +31,9 @@ classdef Trial_Simulator
 		WMrehearsalFailuresPerTrial={};
 		% this keeps track of how many features were decayed
 		WMdecayedFeatures={};
+		% this lets us know how many features were actually encoded for a given trial
+		WMnumEncodedFeatures = [];
+		WMprcntEncodedFeatures = [];
 
 		%%%%%%%%%%%%%%%%%%%%
 		% SETTINGS variables
@@ -80,6 +83,9 @@ classdef Trial_Simulator
 				this.REMsim = this.REMsim.setupNewTrial(target_idx);
 				num_presentations = numel(this.itemPresentationsPerTrial{trial});
 				this.contextVectors(:,trial) = this.REMsim.currentContext();
+
+				this.WMnumEncodedFeatures(trial) = numel(find(this.REMsim.WMStore ~= 0));
+				this.WMprcntEncodedFeatures(trial) = numel(find(this.REMsim.WMStore ~= 0))/numel(this.REMsim.WMStore);
                 
 				if trial > 1
 					this.WMpastLureStrengthsPerTrial{trial} = this.WMpastLureStrengthsPerTrial{trial-1};
