@@ -21,6 +21,7 @@ classdef REMplusWM
 		WMStoreItemIdcs = [];
 		lastWMRehearsalTime = [];
 
+
 		currentTrial = 0;
 		currentContext = [];
 		currentTarget = [];
@@ -202,11 +203,11 @@ classdef REMplusWM
 
 			% now remove zero entries from both the memory trace and the actual item
 			% item features
-			nonzero_item_idcs = find(EM_trace_item_features ~= 0);
+			nonzero_item_idcs = intersect(find(EM_trace_item_features ~= 0), find(item_item_features ~= 0));
 			item_item_features = item_item_features(nonzero_item_idcs);
 			EM_trace_item_features = EM_trace_item_features(nonzero_item_idcs);
 			% context features
-			nonzero_item_idcs = find(EM_trace_context_features ~= 0);
+			nonzero_item_idcs = intersect(find(EM_trace_context_features ~= 0), find(item_context_features ~= 0));
 			item_context_features = item_context_features(nonzero_item_idcs);
 			EM_trace_context_features = EM_trace_context_features(nonzero_item_idcs);
 
@@ -280,10 +281,13 @@ classdef REMplusWM
 			this.currentTimeInTrial = this.currentTimeInTrial + this.timeBetweenPresentations;
 		end
 
-		function [this, numDecayedFeatures] = decayWMtrace(this)
+		% TODO: Think about and implement reasonable way to handle decaying all features?
+		function [this, numDecayedFeatures, numItemFeaturesDecayed, numContextFeaturesDecayed] = decayWMtrace(this)
 			numElapsedTimeUnits = this.currentTimeInTrial - this.lastWMRehearsalTime;
 			decayedWMtrace = this.WMStore;
 			numDecayedFeatures = 0;
+			numItemFeaturesDecayed = 0;
+			numContextFeaturesDecayed = 0;
 		
 			for t = 1 : numElapsedTimeUnits
 				% decide if we'll flip off a feature
@@ -299,6 +303,12 @@ classdef REMplusWM
 					end
 
 					decayedWMtrace(feature_idx_to_turn_off) = 0;
+
+					if feature_idx_to_turn_off <= this.numItemFeatures
+						numItemFeaturesDecayed = numItemFeaturesDecayed + 1;
+					else
+						numContextFeaturesDecayed = numContextFeaturesDecayed + 1;
+					end
 				end
 			end
 
@@ -341,10 +351,14 @@ classdef REMplusWM
 				% the correct memory trace (= target item + current context) as opposed to just the
 				% correct item (that could have a different context from a previous trial attached to
 				% it )
-				if any(find(max_match_idxs == last_EM_trace_idx))
-					max_match_idx = last_EM_trace_idx;
-				else % if we have multiple max values, let's choose a random one
-					max_match_idx = max_match_idxs(randi(numel(max_match_idxs)));
+				% if any(find(max_match_idxs == last_EM_trace_idx))
+				% 	max_match_idx = last_EM_trace_idx;
+				% else % if we have multiple max values, let's choose a random one
+				% 	max_match_idx = max_match_idxs(randi(numel(max_match_idxs)));
+				% 	didRetrievalReturnDifItem = true;
+				% end
+				max_match_idx = max_match_idxs(randi(numel(max_match_idxs)));
+				if max_match_idx ~= last_EM_trace_idx
 					didRetrievalReturnDifItem = true;
 				end
 
