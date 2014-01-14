@@ -1,3 +1,11 @@
+if ~exist('NO_DESCRIPTION','var')
+	% this indicates that we want to run this but we don't want it to wait on our description of the results
+	NO_DESCRIPTION = false;
+end
+
+if ~exist('PLOT_AUC','var')
+	PLOT_AUC = false
+end
 
 filename_template = '/fastscratch/lpiloto/prosp_mem/EM_sim_results_*.mat';
 
@@ -111,13 +119,19 @@ save('/fastscratch/lpiloto/prosp_mem/collapsedAggResults.mat','this','-v7.3');
 % move the individual simulation .mat files into a folder with the name for this batch
 unix(['mv /fastscratch/lpiloto/prosp_mem/*.mat ' this_batch]);
 
-str = input('Yo. Describe these results so you don''t have to fumble to interpret them later: ','s');
-str = [str '\nSaved in: ' this_batch];
-fid = fopen(fullfile(this_batch,'description.txt'),'w');
-fprintf(fid,'%s', str);
+if ~NO_DESCRIPTION
+ 
+ 	str = input('Yo. Describe these results so you don''t have to fumble to interpret them later: ','s');
+ 	str = [str '\nSaved in: ' this_batch];
+ 	fid = fopen(fullfile(this_batch,'description.txt'),'w');
+ 	fprintf(fid,'%s', str);
+ 	
+ 	fclose(fid);
+end
 
-fclose(fid);
-
+if PLOT_AUC
+	plotAUCEMvsWMAggResults(aggResults);
+end
 
 % finally rename our folder
 better_dir_name = ['/fastscratch/lpiloto/prosp_mem/' better_dir_name];
