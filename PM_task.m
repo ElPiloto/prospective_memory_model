@@ -17,11 +17,9 @@ classdef PM_task
 				maxPresentationsPerTrial = PM_task.maxPresentationsPerTrial;
 			end
 
-			targets = zeros(1,numTrials);
 			item_presentations_per_trial = cell(1,numTrials);
 
-			% general gist is to select a random number of presentations for a trial, then randomly select that many items for the trial
-			% and set the target to be the last item for for that trial
+			targets = PM_task.chooseTargets(numUniqueItems,numTrials);
 			for trial = 1 : numTrials
 				if PM_task.sameNumPresentations
 					num_presentations = maxPresentationsPerTrial;
@@ -29,19 +27,8 @@ classdef PM_task
 					% select how many images will be presented on this trial
 					num_presentations = randi(maxPresentationsPerTrial);
 				end
-				% generate sequence of images
-				% if we have more trials than unique items, then we necessarily have to sample with replacement
-				% but in the opposing case, more items than trials, let's make sure we don't ever repeat presentations of
-				% any items by sampling WITHOUT replacement
-				if numUniqueItems < numTrials
-					item_presentations_per_trial{trial} = randsample(numUniqueItems,num_presentations);
-				else
-					item_presentations_per_trial{trial} = randsample(numUniqueItems,num_presentations,false);
-					% double-check we're actually sampling without replacement
-					assert(numel(unique(item_presentations_per_trial{trial})) == num_presentations);
-				end
-				% grab last presented item
-				targets(trial) = item_presentations_per_trial{trial}(end);
+
+				item_presentations_per_trial{trial} = PM_task.choosePresentation(numUniqueItems,num_presentations,targets(trial));
 			end
 
 			save(PM_task.SETTINGS_MAT_FILE,'-v7.3');
@@ -70,6 +57,48 @@ classdef PM_task
 				setenv('SGE_TASK_ID','1');
 				eval(scriptName);
 			end
+
+		end
+
+		function [targets] = chooseTargets(numUniqueItems, numTrials)
+			% this function ensures that we get the most uniform number of item targets possible
+
+			% numTrials = how many targets to choose
+			targets = [];
+
+			% how many full sets of numUnique items can we fit into numTrials?
+			max_unique_repetitions = floor(numTrials / numUniqueItems);
+
+			% how many leftover where we can only get some
+			remainder_targets = numTrials - max_unique_repetitions * numUniqueItems;
+
+			for repetition = 1 : max_unique_repetitions
+				targets = [targets randperm(numUniqueItems)];
+			end
+
+			% here we add the leftover, if any
+			if remainder_targets > 0
+				targets = [targets randsample(numUniqueItems,remainder_targets,false)'];
+			end
+		end
+
+		function [item_presentations] = choosePresentation(numUniqueItems,numPresentations,current_target)
+
+            if numUniqueItems < numPresentations
+                throw(MException('PM_task:InvalidPM_taskParameters','Num Unique Items is less than the number of presentations'));
+            end
+            
+			if current_target == 1
+				to_shuffle = 2:numUniqueItems;
+			elseif current_target == numUniqueItems
+				to_shuffle =  1:(numUniqueItems-1);
+			else
+				to_shuffle = [1:(current_target-1) (current_target+1):numUniqueItems];
+			end
+
+			% select however many we're going to use on each trial minus 1 to leave room for the target we already specified
+			to_shuffle = randsample(to_shuffle,numPresentations-1,false);
+			item_presentations = [to_shuffle(randperm(numel(to_shuffle))) current_target]; % this ensures the target is the last one
 
 		end
 
