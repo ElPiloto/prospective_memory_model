@@ -31,9 +31,15 @@ classdef Trial_Simulator
 		WMrehearsalFailuresPerTrial={};
 		% this keeps track of how many features were decayed
 		WMdecayedFeatures={};
+		WMdecayedContextFeatures={};
+		WMdecayedItemFeatures={};
 		% this lets us know how many features were actually encoded for a given trial
 		WMnumEncodedFeatures = [];
 		WMprcntEncodedFeatures = [];
+		% maintain history of our WMStore as it decays and gets rehearsed and all the good stuff
+		WMStoreHistory = {};
+		% WMStoreRetriev
+		% WMStoreItemIdcsHistory = [];
 
 		%%%%%%%%%%%%%%%%%%%%
 		% SETTINGS variables
@@ -99,13 +105,17 @@ classdef Trial_Simulator
 					this.EMpastTargetsStrengthsPerTrial{trial} = [];
 				end
 
+				this.WMStoreHistory{trial} = zeros(numel(this.REMsim.WMStore),0);
+
 				% here we present the images for this trial and store all the info
 				for presentation_idx = 1 : num_presentations
 					presented_item_idx = this.itemPresentationsPerTrial{trial}(presentation_idx);
 
 					% update trial time for WM
 					this.REMsim = this.REMsim.updateTrialTime();
-					[this.REMsim this.WMdecayedFeatures{trial}(presentation_idx)] = this.REMsim.decayWMtrace();
+					[this.REMsim this.WMdecayedFeatures{trial}(presentation_idx) this.WMdecayedItemFeatures{trial}(presentation_idx) this.WMdecayedContextFeatures{trial}(presentation_idx)] = this.REMsim.decayWMtrace();
+
+					this.WMStoreHistory{trial}(:,end+1) = this.REMsim.WMStore;
 
 					% perform rehearsal if needed
 					[this.REMsim this.WMrehearsalAttemptsPerTrial{trial}(presentation_idx) ...
