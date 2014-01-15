@@ -1,4 +1,4 @@
-function [  ] = plotAUCEMvsWMAggResults( simulations)
+function [EM_auc, WM_auc  ] = plotAUCEMvsWMAggResults( simulations)
 
 num_simulations = numel(simulations);
 
@@ -16,19 +16,17 @@ for trial_number = 1 : numTrials
 
 	for simulation_idx = 1 : num_simulations
 		% gather EM
-		this_trial_EM = [simulations(simulation_idx).EMpastTargetsStrengthsPerTrial{trial_number} simulations(simulation_idx).EMpastLureStrengthsPerTrial{trial_number}] ;
-		concatenated_strengths_EM = [ concatenated_strengths_EM this_trial_EM];
+		concatenated_strengths_EM = [ concatenated_strengths_EM simulations(simulation_idx).EMpresentationStrengthsPerTrial{trial_number}];
 
-		labels = zeros(size(this_trial_EM));
-		labels(1:numel(simulations(simulation_idx).EMpastTargetsStrengthsPerTrial{trial_number})) = 1;
+		labels = zeros(size(simulations(simulation_idx).EMpresentationStrengthsPerTrial{trial_number}));
+		labels(end) = 1;
 		labels_EM = [labels_EM labels];
 
 		% gather WM
-		this_trial_WM = [simulations(simulation_idx).WMpastTargetsStrengthsPerTrial{trial_number} simulations(simulation_idx).WMpastLureStrengthsPerTrial{trial_number}] ;
-		concatenated_strengths_WM = [ concatenated_strengths_WM this_trial_WM];
+		concatenated_strengths_WM = [ concatenated_strengths_WM simulations(simulation_idx).WMpresentationStrengthsPerTrial{trial_number}];
 
-		labels = zeros(size(this_trial_WM));
-		labels(1:numel(simulations(simulation_idx).WMpastTargetsStrengthsPerTrial{trial_number})) = 1;
+		labels = zeros(size(simulations(simulation_idx).WMpresentationStrengthsPerTrial{trial_number}));
+		labels(end) = 1;
 		labels_WM = [labels_WM labels];
 	end
 
