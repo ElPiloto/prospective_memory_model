@@ -52,6 +52,9 @@ classdef Trial_Simulator
         turnOffWMdecay = false;
         turnOffWMrehearsal = false;
 		EMencodingNoise = NaN;
+		% setting this to 0 turns off the hack
+		highPIaddExtraItemsHack = 0;
+		compareTargetEachPresentationHack = false;
 	end
 
 	% properties(Constant = true);
@@ -126,6 +129,15 @@ classdef Trial_Simulator
 					% get WM signal
 					[this.WMpresentationStrengthsPerTrial{trial}(presentation_idx)] = this.REMsim.probeWM(presented_item_idx);
 
+					% extra hack - currently only testing target at the very end - could be reason for extreme crappiness of WM decay
+					% instead here we probe the target at each presentation - getting a sample of the target and the lure at each presentation
+					if this.compareTargetEachPresentationHack
+						% get EM signal
+						this.EMpastLureStrengthsPerTrial{trial}(end+1) = this.REMsim.getOddsRatioForItemIdx(target_idx);
+						% get WM signal
+						this.WMpastLureStrengthsPerTrial{trial}(end+1) = this.REMsim.probeWM(target_idx);
+					end
+
 					% this should always be the last item presented that gets recorded as the target, but let's just go ahead and make sure we're doing what we think we're doing with this check
 					if presented_item_idx == target_idx
 						this.presentationTargetIndicator{trial}(presentation_idx) = 1;
@@ -135,6 +147,13 @@ classdef Trial_Simulator
 						this.WMpastLureStrengthsPerTrial{trial}(end+1) = this.WMpresentationStrengthsPerTrial{trial}(presentation_idx);
 						this.EMpastLureStrengthsPerTrial{trial}(end+1) = this.EMpresentationStrengthsPerTrial{trial}(presentation_idx);
 					end
+				end
+
+				% This is a hack to see if an extreme number of repeated items can really affect the WM reliability without having to run a bunch of extra trials
+				if this.highPIaddExtraItemsHack > 0
+					extra_items = repmat(this.REMsim.WMStore,1,this.highPIaddExtraItemsHack);
+					extra_item_idxs = repmat(this.REMsim.WMStoreItemIdcs,1,this.highPIaddExtraItemsHack);
+					this.REMsim = this.REMsim.addEncodedItemToEMStore(extra_item_idxs, extra_items);
 				end
 
 				if mod(trial,50) == 0
