@@ -327,14 +327,16 @@ classdef REMplusWM
 			this.probCorrectFeatureEncodedEM = prob_correct_feature_encoded;
 		end
 
-		function [this, performedRehearsal, didRetrievalReturnDifItem] = updateWMifNeeded(this)
+		function [this, performedRehearsal, didRetrievalReturnDifItem, retrievedRightItemWrongContext] = updateWMifNeeded(this)
 			didRetrievalReturnDifItem = false;
 			performedRehearsal = false;
+			retrievedRightItemWrongContext = false;
 
 			% check if we've exceeded our rehearsal thresh
 			if (this.currentTimeInTrial - this.lastWMRehearsalTime) >= this.rehearsalFreqWM
 
 				performedRehearsal = true; this.lastWMRehearsalTime = this.currentTimeInTrial;
+
 
 				% cue EM using WM trace
 				[odds_ratio, ~, ~, odds_ratio_all_EM_traces] = this.getOddsRatioForItem(this.WMStore);
@@ -366,6 +368,13 @@ classdef REMplusWM
 				this.WMStore = this.EMStore(:,max_match_idx);
 				oldItemIdx = this.WMStoreItemIdcs;
 				this.WMStoreItemIdcs = this.EMStoreItemIdcs(max_match_idx);
+
+				% it's possible to retrieve the wrong version of the right item i.e. an item was the target
+				% on the current trial and trial 12 - we could retrieve the item from trial 12 with the context
+				% from that trial instead of the item with the context from the current trial
+				if (this.WMStoreItemIdcs == oldItemIdx) && didRetrievalReturnDifItem
+					retrievedRightItemWrongContext = true;
+				end
 
 			end
 		end

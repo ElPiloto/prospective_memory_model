@@ -27,8 +27,13 @@ classdef Trial_Simulator
 		WMpastLureStrengthsPerTrial={};
 		% this will contain the EM strengths for past targets
 		WMpastTargetsStrengthsPerTrial={};
+		% Keep track of rehearsal stats
 		WMrehearsalAttemptsPerTrial={};
+		% this is a measure of retrieved a different memory trace than the current memory trace
 		WMrehearsalFailuresPerTrial={};
+		% this measures whether we retrieved the item for the current target but from a previous
+		% trial (which would have the wrong context to it)
+		WMrehearsalRightItemWrongContext={};
 		% this keeps track of how many features were decayed
 		WMdecayedFeatures={};
 		WMdecayedContextFeatures={};
@@ -122,7 +127,7 @@ classdef Trial_Simulator
 
 					% perform rehearsal if needed
 					[this.REMsim this.WMrehearsalAttemptsPerTrial{trial}(presentation_idx) ...
-				   		this.WMrehearsalFailuresPerTrial{trial}(presentation_idx)] = this.REMsim.updateWMifNeeded();
+				   		this.WMrehearsalFailuresPerTrial{trial}(presentation_idx) this.WMrehearsalRightItemWrongContext{trial}(presentation_idx)] = this.REMsim.updateWMifNeeded();
 
 					% get EM signal
 					[this.EMpresentationStrengthsPerTrial{trial}(presentation_idx), this.EMpresentationProbOld{trial}(presentation_idx), ...
