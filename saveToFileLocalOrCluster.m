@@ -1,12 +1,12 @@
-function [  ] = saveToFileLocalOrCluster( this )
-% [  ] = SAVETOFILELOCALORCLUSTER(this)
+function [  ] = saveToFileLocalOrCluster( trial_simulation )
+% [  ] = SAVETOFILELOCALORCLUSTER(trial_simulation)
 % Purpose
 % 
 % will save simulation result 
 %
 % INPUT
 %
-% this - should be a Trial_Simulator object, i know shitty naming convention but too bad
+% trial_simulation - should be a Trial_Simulator object, i know shitty naming convention but too bad
 %
 % OUTPUT
 % 
@@ -21,23 +21,23 @@ function [  ] = saveToFileLocalOrCluster( this )
 [~,compName] = system('hostname');
 onCluster = strmatch('node',compName);
 if onCluster
-	save_file = ['EM_sim_results_' this.tid '.mat'];
-	save(['/fastscratch/lpiloto/prosp_mem/' save_file],'this','-v7.3');
+	save_file = ['sim_results_' trial_simulation.tid '.mat'];
+	save(fullfile(PM_task.SAVE_DIRECTORY, save_file),'trial_simulation','-v7.3');
 	% we also save a barebones version
-	save_file = ['EM_sim_results_' this.tid 'barebones.mat'];
-	p_old = this.EMpresentationProbOld;
-	p_new = this.EMpresentationProbNew;
-	p_target_indicator = this.presentationTargetIndicator;
-	save(['/fastscratch/lpiloto/prosp_mem/' save_file],'p_old','p_new','p_target_indicator','-v7.3');
+	save_file = ['sim_results_' trial_simulation.tid 'barebones.mat'];
+	p_old = trial_simulation.EMpresentationProbOld;
+	p_new = trial_simulation.EMpresentationProbNew;
+	p_target_indicator = trial_simulation.presentationTargetIndicator;
+	save(fullfile(PM_task.SAVE_DIRECTORY, save_file),'p_old','p_new','p_target_indicator','-v7.3');
 
 else
-	save_file = ['EM_sim_results_' this.tid '.mat'];
-	save(save_file,'this','-v7.3');
+	save_file = ['sim_results_' trial_simulation.tid '.mat'];
+	save(save_file,'trial_simulation','-v7.3');
 	% we also save a barebones version
-	save_file = ['EM_sim_results_' this.tid 'barebones.mat'];
-	p_old = this.EMpresentationProbOld;
-	p_new = this.EMpresentationProbNew;
-	p_target_indicator = this.presentationTargetIndicator;
+	save_file = ['sim_results_' trial_simulation.tid 'barebones.mat'];
+	p_old = trial_simulation.EMpresentationProbOld;
+	p_new = trial_simulation.EMpresentationProbNew;
+	p_target_indicator = trial_simulation.presentationTargetIndicator;
 	save(save_file,'p_old','p_new','p_target_indicator','-v7.3');
 
 end

@@ -8,6 +8,7 @@ classdef PM_task
 		numUniqueItems = 20;
 		sameNumPresentations = true;
 		SETTINGS_MAT_FILE = 'EM_trial_simulations.mat';
+		SAVE_DIRECTORY = '/fastscratch/lpiloto/prosp_mem/';
 	end
 
 	methods(Static = true)

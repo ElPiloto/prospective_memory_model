@@ -1,8 +1,8 @@
 %try
-	EM_simulation = Trial_Simulator();
-	EM_simulation = EM_simulation.ILL_SIM_YOU_LATER();
+	simulation = Trial_Simulator();
+	simulation = simulation.ILL_SIM_YOU_LATER();
 
-	saveToFileLocalOrCluster(EM_simulation);
+	saveToFileLocalOrCluster(simulation);
 
 	if ~exist('shouldExitIfOnCluster','var') || shouldExitIfOnCluster
 		exitIfOnCluster();
