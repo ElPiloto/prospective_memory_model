@@ -38,11 +38,12 @@ end
 
 %figure(8);
 if smooth_size == 0
-	plot(avg_rehearsal_failures);
+	%plot(avg_rehearsal_failures);
+	imagesc(avg_rehearsal_failures);
 else
 	if isstr(smooth_size)
 		plot(smooth(avg_rehearsal_failures,floor(simulation.numTrials * 0.2)));
-	elseif isinteger(smooth_size) && smooth_size > 0
+	elseif isnumeric(smooth_size) && smooth_size > 0
 		plot(smooth(avg_rehearsal_failures,smooth_size));
 	end
 end

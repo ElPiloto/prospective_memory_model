@@ -57,7 +57,7 @@ if smooth_size == 0
 else
 	if isstr(smooth_size)
 		plot(smooth(mean(avg_rehearsal_failures,1),floor(simulations.numTrials * 0.2)));
-	elseif isinteger(smooth_size) && smooth_size > 0
+	elseif isnumeric(smooth_size) && smooth_size > 0
 		plot(smooth(mean(avg_rehearsal_failures,1),smooth_size));
 	end
 end
