@@ -60,6 +60,17 @@ classdef PM_task
 
 		end
 
+		function [] = runInCurrentMatlabEvenIfOnCluster(scriptName)
+			if exist(PM_task.SETTINGS_MAT_FILE,'file')
+				load(PM_task.SETTINGS_MAT_FILE);
+			end
+
+			setenv('SGE_TASK_ID','1');
+			shouldExitIfOnCluster = false;
+			eval(scriptName);
+
+		end
+
 		function [targets] = chooseTargets(numUniqueItems, numTrials)
 			% this function ensures that we get the most uniform number of item targets possible
 
