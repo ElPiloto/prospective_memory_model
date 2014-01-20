@@ -1,6 +1,26 @@
+function [EM_targets, EM_lures, WM_targets, WM_lures  ] = plotLureVsTargetStrengthsAcrossTrials(simulation)
+% [  ] = PLOTLUREVSTARGETSTRENGTHSACROSSTRIALS(input_args)
+% Purpose
+% 
+% Description of function here
+%
+% INPUT
+%
+% Description of inputs
+%
+% OUTPUT
+% 
+% Description of outputs
+%
+% EXAMPLE USAGE:
+%
+% 
+% plotLureVsTargetStrengthsAcrossTrials(Example inputs)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-numTrials = numel(this.WMpresentationStrengthsPerTrial);
-numPresentationsPerTrial = size(this.presentationTargetIndicator{1});
+numTrials = numel(simulation.WMpresentationStrengthsPerTrial);
+numPresentationsPerTrial = size(simulation.presentationTargetIndicator{1});
 
 EM_targets = [];
 EM_lures = [];
@@ -10,16 +30,16 @@ labels_WM = [];
 labels_EM = [];
 for trial_number = 1 : numTrials
 	% get lure and target idxs
-	lure_idcs = find(this.presentationTargetIndicator{trial_number} == 0);
-	target_idcs = find(this.presentationTargetIndicator{trial_number} == 1);
+	lure_idcs = find(simulation.presentationTargetIndicator{trial_number} == 0);
+	target_idcs = find(simulation.presentationTargetIndicator{trial_number} == 1);
 
 	% gather EM
-	this_trial_EM = log(this.EMpresentationStrengthsPerTrial{trial_number});
+	this_trial_EM = log(simulation.EMpresentationStrengthsPerTrial{trial_number});
 	EM_targets(trial_number) = mean(this_trial_EM(target_idcs));
 	EM_lures(trial_number) = mean(this_trial_EM(lure_idcs));
 
 	% gather WM
-	this_trial_WM = log(this.WMpresentationStrengthsPerTrial{trial_number});
+	this_trial_WM = log(simulation.WMpresentationStrengthsPerTrial{trial_number});
 	WM_targets(trial_number) = mean(this_trial_WM(target_idcs));
 	WM_lures(trial_number) = mean(this_trial_WM(lure_idcs));
 end
@@ -44,3 +64,5 @@ width1 = 1.0;
 bar(1:numTrials,[(EM_targets - EM_lures)],width1,'EdgeColor','none','FaceColor',[0.2 0.2 0.5]);
 bar(1:numTrials,[(WM_targets - WM_lures)],width1/2,'EdgeColor','none','FaceColor',[0 0.7 0.7]);
 legend({'EM Targets minus Lures' 'WM Targets minus Lures'},'Location','Best');
+
+end
