@@ -57,7 +57,7 @@ classdef REMplusWM
 
 		% Context settings - some things here have no equivalent in the REM model/paper
 		% this is 
-		numContextFeatures = 25;
+		numContextFeatures = 20;
 		% this indicates whether or not we should gradually 
 		uniformContextThroughoutTrial = true;
 		% context geometric
@@ -68,7 +68,7 @@ classdef REMplusWM
 		shiftContextAcrossTrials = true;
 		% probability with which we resample a feature, currently chosen so that with 20 context features, we can expect to
 		% resample around four features around each time
-		probContextFeatureResample = 0.2;
+		probContextFeatureResample = 0.4;
 
 		% Other settings
 		% this tells us whether we replace or simply append memory traces for EM
@@ -81,7 +81,7 @@ classdef REMplusWM
 		% WM rehearsal frequency
 		rehearsalFreqWM = 20;
 		% feature decay probability: this specifies the probability that a feature gets resampled at each time unit
-		probFeatureDecayWMTrace = 0.248;
+		probFeatureDecayWMTrace = 0.448;
 		probFeatureEncodedWM = 0.4;
 
 	end
