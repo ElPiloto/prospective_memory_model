@@ -81,7 +81,7 @@ classdef REMplusWM
 		% WM rehearsal frequency
 		rehearsalFreqWM = 20;
 		% feature decay probability: this specifies the probability that a feature gets resampled at each time unit
-		probFeatureDecayWMTrace = 0.448;
+		probFeatureDecayWMTrace = 0.248;
 		probFeatureEncodedWM = 0.4;
 
 	end
