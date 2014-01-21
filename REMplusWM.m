@@ -497,7 +497,7 @@ classdef REMplusWM
 			target_item = [this.items(:,item_idx); this.currentContext];
 			% WM_match_value = calculateItemTraceOddsRatio(this,this.WMStore, target_item, this.probCorrectFeatureEncodedEM);
 			% this is the eponymous hack on our git branch - we're going to specify a false value for c in the match equation
-			WM_match_value = calculateItemTraceOddsRatio(this,this.WMStore, target_item, 0.5);
+			WM_match_value = calculateItemTraceOddsRatio(this,this.WMStore, target_item, 0.25);
             
 		end
 
