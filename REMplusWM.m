@@ -37,7 +37,7 @@ classdef REMplusWM
 		% this is how many items we have in each list
 		numUniqueItems = 10;
 		% this is w in the Shiffrin paper
-		numItemFeatures = 40;
+		numItemFeatures = 25;
 		% this is t in the Shiffrin paper
 		numStorageAttempts = 10;
  		% this is g in the paper a.k.a environmental base rate for a feature
@@ -57,7 +57,7 @@ classdef REMplusWM
 
 		% Context settings - some things here have no equivalent in the REM model/paper
 		% this is 
-		numContextFeatures = 5;
+		numContextFeatures = 15;
 		% this indicates whether or not we should gradually 
 		uniformContextThroughoutTrial = true;
 		% context geometric
