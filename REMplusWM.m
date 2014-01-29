@@ -348,10 +348,6 @@ classdef REMplusWM
 				% now we find the one with the highest match value and stick that trace into WM
 				[max_match max_match_idxs] = max_values(odds_ratio_all_EM_traces);
 
-				% if our max corresponds to the last EM trace, then we've retrieved successfully
-				% because the last EM trace was the one most recently encoded AKA the one from this trial, duuuuh
-				last_EM_trace_idx = size(this.EMStore,2);
-
 				% just so we can keep track of the success of WM retrievals
 				% this code takes advantage of the fact that the last memory trace encoded into
 				% EMStore is the original one for this trial, this way we can know that we retrieved
@@ -369,14 +365,14 @@ classdef REMplusWM
 				% store the best matching rehearse
 				best_matching_mem_strength = max_match;
 
-				if max_match_idx ~= last_EM_trace_idx
+				if this.EMStoreItemIdcs(max_match_idx) ~= this.currentTarget
 					didRetrievalReturnDifItem = true;
 				end
 
 				% it's possible to retrieve the wrong version of the right item i.e. an item was the target
 				% on the current trial and trial 12 - we could retrieve the item from trial 12 with the context
 				% from that trial instead of the item with the context from the current trial
-				if (this.WMStoreItemIdcs == this.EMStoreItemIdcs(max_match_idx)) && didRetrievalReturnDifItem
+				if (this.currentTarget == this.EMStoreItemIdcs(max_match_idx)) && didRetrievalReturnDifItem
 					retrievedRightItemWrongContext = true;
 				end
 

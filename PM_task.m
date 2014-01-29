@@ -67,7 +67,7 @@ classdef PM_task
 			end
 
 			if nargin == 2
-				setenv('SGE_TASK_ID',str2num(task_id));
+				setenv('SGE_TASK_ID',num2str(task_id));
 			else
 				setenv('SGE_TASK_ID','1');
 			end
