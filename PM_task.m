@@ -61,12 +61,17 @@ classdef PM_task
 
 		end
 
-		function [] = runInCurrentMatlabEvenIfOnCluster(scriptName)
+		function [] = runInCurrentMatlabEvenIfOnCluster(scriptName,task_id)
 			if exist(PM_task.SETTINGS_MAT_FILE,'file')
 				load(PM_task.SETTINGS_MAT_FILE);
 			end
 
-			setenv('SGE_TASK_ID','1');
+			if nargin == 2
+				setenv('SGE_TASK_ID',str2num(task_id));
+			else
+				setenv('SGE_TASK_ID','1');
+			end
+
 			shouldExitIfOnCluster = false;
 			eval(scriptName);
 

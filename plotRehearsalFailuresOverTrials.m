@@ -34,6 +34,11 @@ avg_rehearsal_failures = [];
 
 for trial_number = 1 : simulation.numTrials
 	avg_rehearsal_failures(trial_number) = any(simulation.WMrehearsalFailuresPerTrial{trial_number} > 0 );
+
+	if any(simulation.WMrejectedRehearsal{trial_number})
+		avg_rehearsal_failures(trial_number) = 0.5;
+	end
+
 end
 
 %figure(8);

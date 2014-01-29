@@ -36,6 +36,9 @@ for presentation_idx = 1 : numPresentations
 		if this.WMrehearsalFailuresPerTrial{trial_number}(presentation_idx)
 			% red indicates we attempted a rehearsal and got a dif. item back
 			color = [1 0 0];
+		elseif this.WMrejectedRehearsal{trial_number}(presentation_idx)
+			% blue indicates we tried a rehearsal, but rejected it because it was too crappy
+			color = [0.2 0.2 1];
 		end
 		vertices = [ presentation_idx-0.5 y_min 0; presentation_idx+0.5 y_min 0; presentation_idx+0.5 y_max 0 ; presentation_idx-0.5 y_max 0];
 		patch('Vertices',vertices,'Faces',[1 2 3 4],'FaceColor',color);
