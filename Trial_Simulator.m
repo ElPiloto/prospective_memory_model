@@ -34,6 +34,13 @@ classdef Trial_Simulator
 		% this measures whether we retrieved the item for the current target but from a previous
 		% trial (which would have the wrong context to it)
 		WMrehearsalRightItemWrongContext={};
+		% this keeps track of times when WM tried a rehearsal, but the retrieved trace fell below
+		% a threshold (set by REMplusWM.minimumRetrievedLogStrengthWM) and so we kept the origina 
+		% trace
+		WMrejectedRehearsal={};
+		% this keeps track of the best matching memory strength when we try a WM rehearsal, regardless
+		% of whether we accept or reject that rehearsal attempt
+		WMrehearsedStrengths={};
 		% this keeps track of how many features were decayed
 		WMdecayedFeatures={};
 		WMdecayedContextFeatures={};
@@ -57,6 +64,7 @@ classdef Trial_Simulator
         turnOffWMdecay = false;
         turnOffWMrehearsal = false;
 		EMencodingNoise = NaN;
+		minimumRetrievedLogStrengthWM = NaN;
 		% setting this to 0 turns off the hack
 		highPIaddExtraItemsHack = 0;
 		compareTargetEachPresentationHack = false;
@@ -87,6 +95,10 @@ classdef Trial_Simulator
 
 			if ~isnan(this.EMencodingNoise)
 				this.REMsim = this.REMsim.setEMencodingNoise(this.EMencodingNoise);
+			end
+			
+			if ~isnan(this.minimumRetrievedLogStrengthWM)
+				this.REMsim.minimumRetrievedLogStrengthWM = this.minimumRetrievedLogStrengthWM;
 			end
             
 			for trial = 1 : this.numTrials
@@ -127,7 +139,8 @@ classdef Trial_Simulator
 
 					% perform rehearsal if needed
 					[this.REMsim this.WMrehearsalAttemptsPerTrial{trial}(presentation_idx) ...
-				   		this.WMrehearsalFailuresPerTrial{trial}(presentation_idx) this.WMrehearsalRightItemWrongContext{trial}(presentation_idx)] = this.REMsim.updateWMifNeeded();
+				   		this.WMrehearsalFailuresPerTrial{trial}(presentation_idx) this.WMrehearsalRightItemWrongContext{trial}(presentation_idx) ...
+						this.WMrejectedRehearsal{trial}(presentation_idx) this.WMrehearsedStrengths{trial}(presentation_idx)] = this.REMsim.updateWMifNeeded();
 
 					% get EM signal
 					[this.EMpresentationStrengthsPerTrial{trial}(presentation_idx), this.EMpresentationProbOld{trial}(presentation_idx), ...

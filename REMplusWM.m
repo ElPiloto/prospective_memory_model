@@ -83,6 +83,9 @@ classdef REMplusWM
 		% feature decay probability: this specifies the probability that a feature gets resampled at each time unit
 		probFeatureDecayWMTrace = 0.248;
 		probFeatureEncodedWM = 0.4;
+		% Settings for Ignoring poor WM rehearsal
+		% Setting this value to anything besides NaN enables this feature
+		minimumRetrievedLogStrengthWM = NaN;
 
 	end
 	methods
@@ -327,10 +330,12 @@ classdef REMplusWM
 			this.probCorrectFeatureEncodedEM = prob_correct_feature_encoded;
 		end
 
-		function [this, performedRehearsal, didRetrievalReturnDifItem, retrievedRightItemWrongContext] = updateWMifNeeded(this)
+		function [this, performedRehearsal, didRetrievalReturnDifItem, retrievedRightItemWrongContext, rejectedRetrievedTrace, best_matching_mem_strength ] = updateWMifNeeded(this)
 			didRetrievalReturnDifItem = false;
 			performedRehearsal = false;
 			retrievedRightItemWrongContext = false;
+			rejectedRetrievedTrace = false;
+			best_matching_mem_strength = NaN;
 
 			% check if we've exceeded our rehearsal thresh
 			if (this.currentTimeInTrial - this.lastWMRehearsalTime) >= this.rehearsalFreqWM
@@ -360,21 +365,33 @@ classdef REMplusWM
 				% 	didRetrievalReturnDifItem = true;
 				% end
 				max_match_idx = max_match_idxs(randi(numel(max_match_idxs)));
+
+				% store the best matching rehearse
+				best_matching_mem_strength = max_match;
+
 				if max_match_idx ~= last_EM_trace_idx
 					didRetrievalReturnDifItem = true;
 				end
+
+				% it's possible to retrieve the wrong version of the right item i.e. an item was the target
+				% on the current trial and trial 12 - we could retrieve the item from trial 12 with the context
+				% from that trial instead of the item with the context from the current trial
+				if (this.WMStoreItemIdcs == this.EMStoreItemIdcs(max_match_idx)) && didRetrievalReturnDifItem
+					retrievedRightItemWrongContext = true;
+				end
+
+				% here we check if the retrieved match strength passes our threshold to prevent
+				% WM from retrieving utter garbage
+				if ~isnan(this.minimumRetrievedLogStrengthWM) && log(max_match) < this.minimumRetrievedLogStrengthWM
+					rejectedRetrievedTrace = true;
+					return;
+				end
+
 
 				% actually swap out the contents
 				this.WMStore = this.EMStore(:,max_match_idx);
 				oldItemIdx = this.WMStoreItemIdcs;
 				this.WMStoreItemIdcs = this.EMStoreItemIdcs(max_match_idx);
-
-				% it's possible to retrieve the wrong version of the right item i.e. an item was the target
-				% on the current trial and trial 12 - we could retrieve the item from trial 12 with the context
-				% from that trial instead of the item with the context from the current trial
-				if (this.WMStoreItemIdcs == oldItemIdx) && didRetrievalReturnDifItem
-					retrievedRightItemWrongContext = true;
-				end
 
 			end
 		end
