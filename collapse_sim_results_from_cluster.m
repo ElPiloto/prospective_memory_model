@@ -25,7 +25,7 @@ for file_num = 1 : num_files
         for trial = 1 : trial_simulation.numTrials
             collapsedAggResults.numTrials = trial_simulation.numTrials;
             collapsedAggResults.WMdecayedFeatures{trial} = trial_simulation.WMdecayedFeatures{trial};
-            collapsedAggResults.WMrehearsalFailuresPerTrial{trial} =  trial_simulation.WMrehearsalFailuresPerTrial{trial};
+            collapsedAggResults.WMdidRehearsalMatchDifTrace{trial} =  trial_simulation.WMdidRehearsalMatchDifTrace{trial};
             collapsedAggResults.WMpresentationStrengthsPerTrial{trial} =  trial_simulation.WMpresentationStrengthsPerTrial{trial};
             collapsedAggResults.EMpresentationStrengthsPerTrial{trial} =  trial_simulation.EMpresentationStrengthsPerTrial{trial};
             collapsedAggResults.EMpastLureStrengthsPerTrial{trial} =  trial_simulation.EMpastLureStrengthsPerTrial{trial};
@@ -34,6 +34,9 @@ for file_num = 1 : num_files
             collapsedAggResults.WMpastTargetsStrengthsPerTrial{trial} =  trial_simulation.WMpastTargetsStrengthsPerTrial{trial};
             collapsedAggResults.WMrehearsalAttemptsPerTrial{trial} = trial_simulation.WMrehearsalAttemptsPerTrial{trial};
             collapsedAggResults.presentationTargetIndicator{trial} = trial_simulation.presentationTargetIndicator{trial};
+      		collapsedAggResults(result_idx).WMrehearsalRightItemWrongContext{trial} = trial_simulation.WMrehearsalRightItemWrongContext{trial};
+      		collapsedAggResults(result_idx).WMrejectedRehearsal{trial} = trial_simulation.WMrejectedRehearsal{trial};
+
         end
 
     else
@@ -41,12 +44,14 @@ for file_num = 1 : num_files
         for trial = 1 : trial_simulation.numTrials
             % do an inplace average for all the things we want to store
             collapsedAggResults.WMdecayedFeatures{trial} = (collapsedAggResults.WMdecayedFeatures{trial}*(file_num-1) + trial_simulation.WMdecayedFeatures{trial})/(file_num);
-            collapsedAggResults.WMrehearsalFailuresPerTrial{trial} = (collapsedAggResults.WMrehearsalFailuresPerTrial{trial}*(file_num-1) + trial_simulation.WMrehearsalFailuresPerTrial{trial})/(file_num);
+            collapsedAggResults.WMdidRehearsalMatchDifTrace{trial} = (collapsedAggResults.WMdidRehearsalMatchDifTrace{trial}*(file_num-1) + trial_simulation.WMdidRehearsalMatchDifTrace{trial})/(file_num);
             collapsedAggResults.WMpresentationStrengthsPerTrial{trial} = (collapsedAggResults.WMpresentationStrengthsPerTrial{trial}*(file_num-1) + trial_simulation.WMpresentationStrengthsPerTrial{trial})/(file_num);
             collapsedAggResults.EMpresentationStrengthsPerTrial{trial} = (collapsedAggResults.EMpresentationStrengthsPerTrial{trial}*(file_num-1) + trial_simulation.EMpresentationStrengthsPerTrial{trial})/(file_num);
             collapsedAggResults.EMpastLureStrengthsPerTrial{trial} = (collapsedAggResults.EMpastLureStrengthsPerTrial{trial}*(file_num-1) + trial_simulation.EMpastLureStrengthsPerTrial{trial})/(file_num);
             collapsedAggResults.WMpastLureStrengthsPerTrial{trial} = (collapsedAggResults.WMpastLureStrengthsPerTrial{trial}*(file_num-1) + trial_simulation.WMpastLureStrengthsPerTrial{trial})/(file_num);
             collapsedAggResults.EMpastTargetsStrengthsPerTrial{trial} = (collapsedAggResults.EMpastTargetsStrengthsPerTrial{trial}*(file_num-1) + trial_simulation.EMpastTargetsStrengthsPerTrial{trial})/(file_num);
+       		collapsedAggResults(result_idx).WMrehearsalRightItemWrongContext{trial} = (collapsedAggResults.WMrehearsalRightItemWrongContext{trial}*(file_num-1) + trial_simulation.WMrehearsalRightItemWrongContext{trial})/(file_num);
+      		collapsedAggResults(result_idx).WMrejectedRehearsal{trial} = (collapsedAggResults.WMrejectedRehearsal{trial}*(file_num-1) + trial_simulation.WMrejectedRehearsal{trial})/(file_num);
             collapsedAggResults.WMpastTargetsStrengthsPerTrial{trial} = (collapsedAggResults.WMpastTargetsStrengthsPerTrial{trial}*(file_num-1) + trial_simulation.WMpastTargetsStrengthsPerTrial{trial})/(file_num);
 
             % we're assuming these remain constant across all thesimulations

@@ -33,7 +33,7 @@ first_failures = [];
 for simulation_idx = 1 : num_simulations
 
 	for trial_number = 1 : simulations(1).numTrials
-        attemptFailures = simulations(simulation_idx).WMrehearsalFailuresPerTrial{trial_number}(simulations(simulation_idx).WMrehearsalAttemptsPerTrial{trial_number});
+        attemptFailures = simulations(simulation_idx).WMdidRehearsalMatchDifTrace{trial_number}(simulations(simulation_idx).WMrehearsalAttemptsPerTrial{trial_number});
         % only count the number of failures up to the first failure:
         % e.g.: given rehearsal failure as: [0 0 1 1], we want this to be
         % 1/3 because of the 3 times we had the correct memory in WM, we

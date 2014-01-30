@@ -33,7 +33,7 @@ for presentation_idx = 1 : numPresentations
 		% green indicates we attempted a rehearsal and got the same one back
 		color = [0 1 0];
 
-		if this.WMrehearsalFailuresPerTrial{trial_number}(presentation_idx)
+		if this.WMdidRehearsalMatchDifTrace{trial_number}(presentation_idx)
 			% red indicates we attempted a rehearsal and got a dif. item back
 			color = [1 0 0];
 		elseif this.WMrejectedRehearsal{trial_number}(presentation_idx)

@@ -15,7 +15,11 @@ function [ avg_rehearsal_failures, wrong_context_strengths ] = plotRehearsalInfo
 %
 %
 % OUTPUT
-% 
+%  generates two plots:
+%  		1. this shows the results of each rehearsal attempt on each trial. Red indicates a rejected 
+%  		rehearsal attempt, green = accepted. W = wrong item, C = right item wrong context,
+%  		F = falsely rejected the correct trace
+%  		2. plots the memory strength of each rehearsed 
 % 
 %
 % EXAMPLE USAGE:
@@ -40,7 +44,7 @@ end
 
 for trial_number = 1 : simulation.numTrials
 	% this only draws a rehearsal as a failure if it retrived the wrong item AND we didn't reject the rehearsal
-	avg_rehearsal_failures(trial_number) = any((simulation.WMrehearsalFailuresPerTrial{trial_number} > 0) .* (simulation.WMrejectedRehearsal{trial_number} == 0) );
+	avg_rehearsal_failures(trial_number) = any((simulation.WMdidRehearsalMatchDifTrace{trial_number} > 0) .* (simulation.WMrejectedRehearsal{trial_number} == 0) );
 	if plot_rehearsed_strengths
 		rehearsed_probe_numbers = find(simulation.WMrehearsalAttemptsPerTrial{trial_number});
 		rehearsed_memory_strengths(:,trial_number) = simulation.WMrehearsedStrengths{trial_number}(rehearsed_probe_numbers);
@@ -83,7 +87,7 @@ function [label_values] = createLabelFromRehearsal(simulation, trial_number, reh
 		% strictly speaking we don't have to pop these values out, but it's easier this way
 		rejected = simulation.WMrejectedRehearsal{trial_number}(probe);
 		rightItemWrongContext = simulation.WMrehearsalRightItemWrongContext{trial_number}(probe);
-		wrongItem = ~rightItemWrongContext && simulation.WMrehearsalFailuresPerTrial{trial_number}(probe);
+		wrongItem = ~rightItemWrongContext && simulation.WMdidRehearsalMatchDifTrace{trial_number}(probe);
 		success = ~rightItemWrongContext && ~wrongItem;
 		label = '';
 		if rejected
@@ -96,8 +100,8 @@ function [label_values] = createLabelFromRehearsal(simulation, trial_number, reh
 			label = [label 'C'];
 		elseif wrongItem
 			label = [label 'W'];
-		elseif success
-			label = [label ''];
+		elseif success && rejected
+			label = [label 'F'];
 		end
 
 		label_values{probe_idx} = label;

@@ -45,7 +45,11 @@ for file_num = 1 : num_files
 		if trial_simulation.turnOffWMrehearsal
 			better_dir_name = 'rehearseNO';
 		else
-			better_dir_name = 'rehearseYES';
+			if isnan(trial_simulation.minimumRetrievedLogStrengthWM)
+				better_dir_name = 'rehearseYES';
+			else
+				better_dir_name = 'rehearseREJECT';
+			end
 		end
 		if trial_simulation.turnOffWMdecay
 			better_dir_name = [better_dir_name 'decayNO'];
@@ -54,14 +58,14 @@ for file_num = 1 : num_files
 		end
 		better_dir_name = [better_dir_name num2str(trial_simulation.numUniqueItems ) 'unqItems' num2str(floor(trial_simulation.REMsim.rehearsalFreqWM/trial_simulation.REMsim.timeBetweenPresentations)) 'rehearsefreq' ];
 		% here we append the random character and time part of the datetime stamp to the better_dir_name
-		better_dir_name = [better_dir_name '_' this_batch_timestamp(1) this_batch_timestamp(end-6:end)];
+		better_dir_name = [this_batch_timestamp(1) this_batch_timestamp(end-6:end) '_' better_dir_name] ;
 	end
 
 	% store all results separately
 	for trial = 1 : trial_simulation.numTrials
 		aggResults(result_idx).numTrials = trial_simulation.numTrials;
 		aggResults(result_idx).WMdecayedFeatures{trial} = trial_simulation.WMdecayedFeatures{trial};
-		aggResults(result_idx).WMrehearsalFailuresPerTrial{trial} =  trial_simulation.WMrehearsalFailuresPerTrial{trial};
+		aggResults(result_idx).WMdidRehearsalMatchDifTrace{trial} =  trial_simulation.WMdidRehearsalMatchDifTrace{trial};
 		aggResults(result_idx).WMpresentationStrengthsPerTrial{trial} =  trial_simulation.WMpresentationStrengthsPerTrial{trial};
 		aggResults(result_idx).EMpresentationStrengthsPerTrial{trial} =  trial_simulation.EMpresentationStrengthsPerTrial{trial};
 		aggResults(result_idx).EMpastLureStrengthsPerTrial{trial} =  trial_simulation.EMpastLureStrengthsPerTrial{trial};
@@ -70,6 +74,8 @@ for file_num = 1 : num_files
 		aggResults(result_idx).WMpastTargetsStrengthsPerTrial{trial} =  trial_simulation.WMpastTargetsStrengthsPerTrial{trial};
 		aggResults(result_idx).WMrehearsalAttemptsPerTrial{trial} = trial_simulation.WMrehearsalAttemptsPerTrial{trial};
 		aggResults(result_idx).presentationTargetIndicator{trial} = trial_simulation.presentationTargetIndicator{trial};
+		aggResults(result_idx).WMrehearsalRightItemWrongContext{trial} = trial_simulation.WMrehearsalRightItemWrongContext{trial};
+		aggResults(result_idx).WMrejectedRehearsal{trial} = trial_simulation.WMrejectedRehearsal{trial};
 	end
 	aggResults(result_idx).tid = trial_simulation.tid;
 	aggResults(result_idx).targetsPerTrial = trial_simulation.targetsPerTrial;
@@ -80,7 +86,7 @@ for file_num = 1 : num_files
         for trial = 1 : trial_simulation.numTrials
             collapsedAggResults.numTrials = trial_simulation.numTrials;
             collapsedAggResults.WMdecayedFeatures{trial} = trial_simulation.WMdecayedFeatures{trial};
-            collapsedAggResults.WMrehearsalFailuresPerTrial{trial} =  trial_simulation.WMrehearsalFailuresPerTrial{trial};
+            collapsedAggResults.WMdidRehearsalMatchDifTrace{trial} =  trial_simulation.WMdidRehearsalMatchDifTrace{trial};
             collapsedAggResults.WMpresentationStrengthsPerTrial{trial} =  trial_simulation.WMpresentationStrengthsPerTrial{trial};
             collapsedAggResults.EMpresentationStrengthsPerTrial{trial} =  trial_simulation.EMpresentationStrengthsPerTrial{trial};
             collapsedAggResults.EMpastLureStrengthsPerTrial{trial} =  trial_simulation.EMpastLureStrengthsPerTrial{trial};
@@ -89,7 +95,9 @@ for file_num = 1 : num_files
             collapsedAggResults.WMpastTargetsStrengthsPerTrial{trial} =  trial_simulation.WMpastTargetsStrengthsPerTrial{trial};
             collapsedAggResults.WMrehearsalAttemptsPerTrial{trial} = trial_simulation.WMrehearsalAttemptsPerTrial{trial};
             collapsedAggResults.presentationTargetIndicator{trial} = trial_simulation.presentationTargetIndicator{trial};
-        end
+      		collapsedAggResults(result_idx).WMrehearsalRightItemWrongContext{trial} = trial_simulation.WMrehearsalRightItemWrongContext{trial};
+      		collapsedAggResults(result_idx).WMrejectedRehearsal{trial} = trial_simulation.WMrejectedRehearsal{trial};
+  		end
 
 		collapsedAggResults(result_idx).targetsPerTrial = trial_simulation.targetsPerTrial;
     else
@@ -97,13 +105,15 @@ for file_num = 1 : num_files
         for trial = 1 : trial_simulation.numTrials
             % do an inplace average for all the things we want to store
             collapsedAggResults.WMdecayedFeatures{trial} = (collapsedAggResults.WMdecayedFeatures{trial}*(file_num-1) + trial_simulation.WMdecayedFeatures{trial})/(file_num);
-            collapsedAggResults.WMrehearsalFailuresPerTrial{trial} = (collapsedAggResults.WMrehearsalFailuresPerTrial{trial}*(file_num-1) + trial_simulation.WMrehearsalFailuresPerTrial{trial})/(file_num);
+            collapsedAggResults.WMdidRehearsalMatchDifTrace{trial} = (collapsedAggResults.WMdidRehearsalMatchDifTrace{trial}*(file_num-1) + trial_simulation.WMdidRehearsalMatchDifTrace{trial})/(file_num);
             collapsedAggResults.WMpresentationStrengthsPerTrial{trial} = (collapsedAggResults.WMpresentationStrengthsPerTrial{trial}*(file_num-1) + trial_simulation.WMpresentationStrengthsPerTrial{trial})/(file_num);
             collapsedAggResults.EMpresentationStrengthsPerTrial{trial} = (collapsedAggResults.EMpresentationStrengthsPerTrial{trial}*(file_num-1) + trial_simulation.EMpresentationStrengthsPerTrial{trial})/(file_num);
             collapsedAggResults.EMpastLureStrengthsPerTrial{trial} = (collapsedAggResults.EMpastLureStrengthsPerTrial{trial}*(file_num-1) + trial_simulation.EMpastLureStrengthsPerTrial{trial})/(file_num);
             collapsedAggResults.WMpastLureStrengthsPerTrial{trial} = (collapsedAggResults.WMpastLureStrengthsPerTrial{trial}*(file_num-1) + trial_simulation.WMpastLureStrengthsPerTrial{trial})/(file_num);
             collapsedAggResults.EMpastTargetsStrengthsPerTrial{trial} = (collapsedAggResults.EMpastTargetsStrengthsPerTrial{trial}*(file_num-1) + trial_simulation.EMpastTargetsStrengthsPerTrial{trial})/(file_num);
             collapsedAggResults.WMpastTargetsStrengthsPerTrial{trial} = (collapsedAggResults.WMpastTargetsStrengthsPerTrial{trial}*(file_num-1) + trial_simulation.WMpastTargetsStrengthsPerTrial{trial})/(file_num);
+      		collapsedAggResults(result_idx).WMrehearsalRightItemWrongContext{trial} = (collapsedAggResults.WMrehearsalRightItemWrongContext{trial}*(file_num-1) + trial_simulation.WMrehearsalRightItemWrongContext{trial})/(file_num);
+      		collapsedAggResults(result_idx).WMrejectedRehearsal{trial} = (collapsedAggResults.WMrejectedRehearsal{trial}*(file_num-1) + trial_simulation.WMrejectedRehearsal{trial})/(file_num);
 
             % we're assuming these remain constant across all the simulations
             collapsedAggResults.WMrehearsalAttemptsPerTrial{trial} = trial_simulation.WMrehearsalAttemptsPerTrial{trial};

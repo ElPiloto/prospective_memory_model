@@ -40,9 +40,9 @@ for trial_number = 1 : simulation.numTrials
 
 		rejectedB = simulation.WMrejectedRehearsal{trial_number}(probe);
 		rightItemWrongContextB = simulation.WMrehearsalRightItemWrongContext{trial_number}(probe);
-		wrongItemB = ~rightItemWrongContextB && simulation.WMrehearsalFailuresPerTrial{trial_number}(probe);
+		wrongItemB = ~rightItemWrongContextB && simulation.WMdidRehearsalMatchDifTrace{trial_number}(probe);
 		successB = ~rightItemWrongContextB && ~wrongItemB && ~rejectedB;
-		falseRejectionsB = rejectedB && simulation.WMrehearsalFailuresPerTrial{trial_number}(probe);
+		falseRejectionsB = rejectedB && simulation.WMdidRehearsalMatchDifTrace{trial_number}(probe);
 
 		rehearsedStrength = simulation.WMrehearsedStrengths{trial_number}(probe);
 

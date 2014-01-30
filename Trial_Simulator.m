@@ -30,7 +30,7 @@ classdef Trial_Simulator
 		% Keep track of rehearsal stats
 		WMrehearsalAttemptsPerTrial={};
 		% this is a measure of retrieved a different memory trace than the current memory trace
-		WMrehearsalFailuresPerTrial={};
+		WMdidRehearsalMatchDifTrace={};
 		% this measures whether we retrieved the item for the current target but from a previous
 		% trial (which would have the wrong context to it)
 		WMrehearsalRightItemWrongContext={};
@@ -139,7 +139,7 @@ classdef Trial_Simulator
 
 					% perform rehearsal if needed
 					[this.REMsim this.WMrehearsalAttemptsPerTrial{trial}(presentation_idx) ...
-				   		this.WMrehearsalFailuresPerTrial{trial}(presentation_idx) this.WMrehearsalRightItemWrongContext{trial}(presentation_idx) ...
+				   		this.WMdidRehearsalMatchDifTrace{trial}(presentation_idx) this.WMrehearsalRightItemWrongContext{trial}(presentation_idx) ...
 						this.WMrejectedRehearsal{trial}(presentation_idx) this.WMrehearsedStrengths{trial}(presentation_idx)] = this.REMsim.updateWMifNeeded();
 
 					% get EM signal

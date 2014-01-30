@@ -14,6 +14,9 @@ classdef REMplusWM
 		EMStore = [];
 		% this tells us for each value in EMStore, which item number it was generated from
 		EMStoreItemIdcs = [];
+		% this tells us which EM trace was last encoded - in most cases this will be the last
+		% trace in EM store, but it's safer to keep an explicit reference to it!
+		EMlastEncodedTrace = [];
 
 		% WM store - currently only contains a single memory trace at a time
 		WMStore = [];
@@ -330,8 +333,8 @@ classdef REMplusWM
 			this.probCorrectFeatureEncodedEM = prob_correct_feature_encoded;
 		end
 
-		function [this, performedRehearsal, didRetrievalReturnDifItem, retrievedRightItemWrongContext, rejectedRetrievedTrace, best_matching_mem_strength ] = updateWMifNeeded(this)
-			didRetrievalReturnDifItem = false;
+		function [this, performedRehearsal, didRehearsalMatchDifTrace, retrievedRightItemWrongContext, rejectedRetrievedTrace, best_matching_mem_strength ] = updateWMifNeeded(this)
+			didRehearsalMatchDifTrace = false;
 			performedRehearsal = false;
 			retrievedRightItemWrongContext = false;
 			rejectedRetrievedTrace = false;
@@ -358,21 +361,22 @@ classdef REMplusWM
 				% 	max_match_idx = last_EM_trace_idx;
 				% else % if we have multiple max values, let's choose a random one
 				% 	max_match_idx = max_match_idxs(randi(numel(max_match_idxs)));
-				% 	didRetrievalReturnDifItem = true;
+				% 	didRehearsalMatchDifTrace = true;
 				% end
 				max_match_idx = max_match_idxs(randi(numel(max_match_idxs)));
 
 				% store the best matching rehearse
 				best_matching_mem_strength = max_match;
 
-				if this.EMStoreItemIdcs(max_match_idx) ~= this.currentTarget
-					didRetrievalReturnDifItem = true;
+				% see if we retrieved a different memory trace
+				if max_match_idx ~= this.EMlastEncodedTrace
+					didRehearsalMatchDifTrace = true;
 				end
 
 				% it's possible to retrieve the wrong version of the right item i.e. an item was the target
 				% on the current trial and trial 12 - we could retrieve the item from trial 12 with the context
 				% from that trial instead of the item with the context from the current trial
-				if (this.currentTarget == this.EMStoreItemIdcs(max_match_idx)) && didRetrievalReturnDifItem
+				if (this.currentTarget == this.EMStoreItemIdcs(max_match_idx)) && didRehearsalMatchDifTrace
 					retrievedRightItemWrongContext = true;
 				end
 
@@ -522,14 +526,17 @@ classdef REMplusWM
 					% memory trace's item has not been stored, let's just append it to the end
 					this.EMStore = [this.EMStore encoded_trace];
 					this.EMStoreItemIdcs = [this.EMStoreItemIdcs encoded_item_idx];
+					this.EMlastEncodedTrace = size(this.EMStore,2);
 				else
 					% memory trace's item has been stored, let's replace it with the memory trace for this item from this trial
 					this.EMStore(:,EM_store_location_for_item) = encoded_trace;
+					this.EMlastEncodedTrace = EM_store_location_for_item;
 				end
 			else % this is the logic where we DON'T REPLACE memory traces
 				% let's just append it to the end
 				this.EMStore = [this.EMStore encoded_trace];
 				this.EMStoreItemIdcs = [this.EMStoreItemIdcs encoded_item_idx];
+				this.EMlastEncodedTrace = size(this.EMStore,2);
 			end
 		end
 

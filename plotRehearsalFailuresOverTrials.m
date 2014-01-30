@@ -33,7 +33,7 @@ end
 avg_rehearsal_failures = [];
 
 for trial_number = 1 : simulation.numTrials
-	avg_rehearsal_failures(trial_number) = any(simulation.WMrehearsalFailuresPerTrial{trial_number} > 0 );
+	avg_rehearsal_failures(trial_number) = any(simulation.WMdidRehearsalMatchDifTrace{trial_number} > 0 );
 
 	if any(simulation.WMrejectedRehearsal{trial_number})
 		avg_rehearsal_failures(trial_number) = 0.5;
@@ -45,6 +45,7 @@ end
 if smooth_size == 0
 	%plot(avg_rehearsal_failures);
 	imagesc(avg_rehearsal_failures);
+	ylim([0 1]);
 else
 	if isstr(smooth_size)
 		plot(smooth(avg_rehearsal_failures,floor(simulation.numTrials * 0.2)));

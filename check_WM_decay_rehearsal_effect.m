@@ -31,7 +31,7 @@ for trial = 1 : simulation.numTrials
 	if any(simulation.WMdecayedFeatures{trial})
 		num_trials_with_decayed_feature = num_trials_with_decayed_feature + 1;
 		first_decayed_feature = min(find(simulation.WMdecayedFeatures{trial} ~= 0));
-		if any(simulation.WMrehearsalFailuresPerTrial{trial}(first_decayed_feature:end) .* simulation.WMrehearsalAttemptsPerTrial{trial}(first_decayed_feature:end))
+		if any(simulation.WMdidRehearsalMatchDifTrace{trial}(first_decayed_feature:end) .* simulation.WMrehearsalAttemptsPerTrial{trial}(first_decayed_feature:end))
 			failures_due_to_decay = failures_due_to_decay + 1;
 		end
 		failed_trials(end+1) = trial;
